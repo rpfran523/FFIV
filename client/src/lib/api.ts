@@ -1,7 +1,9 @@
 import axios from 'axios';
 import type { AuthTokens } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = import.meta.env.PROD
+  ? 'https://ff-chi.onrender.com/api'
+  : (import.meta.env.VITE_API_URL || '/api');
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
