@@ -1,22 +1,15 @@
 import { Pool } from 'pg';
 import { config } from '../config';
 
-// Parse connection string to handle SSL properly
-const isRDS = config.database.url.includes('rds.amazonaws.com');
+// SSL is required for production databases (e.g., Render, AWS)
+const isProduction = config.env === 'production';
 const connectionConfig = {
   connectionString: config.database.url,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
+  ssl: isProduction ? { rejectUnauthorized: false } : undefined,
 };
-
-// Add SSL configuration for RDS
-if (isRDS) {
-  connectionConfig.ssl = {
-    rejectUnauthorized: false,
-    ca: undefined, // Let Node.js use default CAs
-  };
-}
 
 export const pool = new Pool(connectionConfig);
 
