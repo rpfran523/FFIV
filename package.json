@@ -9,7 +9,8 @@
     "server"
   ],
   "scripts": {
-    "build": "node scripts/build.js",
+    "build": "node build-render.js",
+    "build:local": "node scripts/build.js",
     "build:client": "npm run build --workspace=client",
     "build:server": "npm run build --workspace=server",
     "start": "node dist/server/index.js",
