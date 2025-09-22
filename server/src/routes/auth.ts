@@ -96,6 +96,7 @@ router.post('/login', authLimiter, async (req: Request, res: Response, next: Nex
       tokens, // Always return tokens for frontend
     });
   } catch (error) {
+    console.error('💥 Login Error:', error);
     next(error);
   }
 });

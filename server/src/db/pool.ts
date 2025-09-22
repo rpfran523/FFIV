@@ -14,8 +14,12 @@ const connectionConfig = {
 export const pool = new Pool(connectionConfig);
 
 // Test connection
+pool.on('connect', () => {
+  console.log('✅ Database client connected');
+});
+
 pool.on('error', (err) => {
-  console.error('Unexpected error on idle database client', err);
+  console.error('❌ Unexpected error on idle database client', err);
   process.exit(-1);
 });
 
