@@ -17,15 +17,15 @@ try {
 
   // Install all dependencies including devDependencies for build
   console.log('📦 Installing all dependencies for build...');
-  execSync('npm ci', { stdio: 'inherit' });
+  execSync('npm install --include=dev', { stdio: 'inherit' });
 
-  // Install server dependencies including devDependencies
-  console.log('📦 Installing server dependencies...');
-  execSync('cd server && npm install', { stdio: 'inherit' });
-  
-  // Install client dependencies
-  console.log('📦 Installing client dependencies...');
-  execSync('cd client && npm install', { stdio: 'inherit' });
+  // The root install should handle workspaces, so these are not needed
+  // and may cause issues.
+  // console.log('📦 Installing server dependencies...');
+  // execSync('cd server && npm install --include=dev', { stdio: 'inherit' });
+  //
+  // console.log('📦 Installing client dependencies...');
+  // execSync('cd client && npm install --include=dev', { stdio: 'inherit' });
 
   // Build server
   console.log('🔨 Building server...');
