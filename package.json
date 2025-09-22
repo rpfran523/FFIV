@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "description": "Flower Fairies e-commerce platform",
   "private": true,
-  "type": "module",
   "workspaces": [
     "client",
     "server"
   ],
   "scripts": {
     "build": "node build-render.js",
+    "build:render": "node scripts/build-render.js",
     "build:local": "node scripts/build.js",
     "build:client": "npm run build --workspace=client",
     "build:server": "npm run build --workspace=server",

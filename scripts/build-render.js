@@ -9,7 +9,7 @@ console.log('🚀 Starting Render build process...');
 try {
   // Clean previous build
   console.log('🧹 Cleaning previous build...');
-  const distDir = join(__dirname, 'dist');
+  const distDir = join(__dirname, '..', 'dist');
   if (existsSync(distDir)) {
     rmSync(distDir, { recursive: true, force: true });
   }
@@ -17,28 +17,28 @@ try {
 
   // Install all dependencies including devDependencies for build
   console.log('📦 Installing all dependencies for build...');
-  execSync('npm ci', { stdio: 'inherit' });
+  execSync('npm ci', { stdio: 'inherit', cwd: join(__dirname, '..') });
 
   // Install server dependencies including devDependencies
   console.log('📦 Installing server dependencies...');
-  execSync('cd server && npm install', { stdio: 'inherit' });
+  execSync('npm install', { stdio: 'inherit', cwd: join(__dirname, '..', 'server') });
   
   // Install client dependencies
   console.log('📦 Installing client dependencies...');
-  execSync('cd client && npm install', { stdio: 'inherit' });
+  execSync('npm install', { stdio: 'inherit', cwd: join(__dirname, '..', 'client') });
 
   // Build server
   console.log('🔨 Building server...');
-  execSync('cd server && npm run build', { stdio: 'inherit' });
+  execSync('npm run build', { stdio: 'inherit', cwd: join(__dirname, '..', 'server') });
 
   // Build client
   console.log('🎨 Building client...');
-  execSync('cd client && npm run build', { stdio: 'inherit' });
+  execSync('npm run build', { stdio: 'inherit', cwd: join(__dirname, '..', 'client') });
 
   // Copy client build to server dist
   console.log('📦 Copying client build to server dist...');
-  const clientBuildPath = join(__dirname, 'client', 'dist');
-  const serverClientPath = join(__dirname, 'dist', 'client');
+  const clientBuildPath = join(__dirname, '..', 'client', 'dist');
+  const serverClientPath = join(__dirname, '..', 'dist', 'client');
   
   if (existsSync(clientBuildPath)) {
     cpSync(clientBuildPath, serverClientPath, { recursive: true });
@@ -49,8 +49,8 @@ try {
 
   // Copy server build to dist
   console.log('📦 Copying server build...');
-  const serverBuildPath = join(__dirname, 'server', 'dist');
-  const distServerPath = join(__dirname, 'dist', 'server');
+  const serverBuildPath = join(__dirname, '..', 'server', 'dist');
+  const distServerPath = join(__dirname, '..', 'dist', 'server');
   
   if (existsSync(serverBuildPath)) {
     cpSync(serverBuildPath, distServerPath, { recursive: true });
@@ -61,8 +61,8 @@ try {
 
   // Copy server package.json and install production dependencies
   console.log('📦 Setting up production dependencies...');
-  const serverPackageJson = join(__dirname, 'server', 'package.json');
-  const distPackageJson = join(__dirname, 'dist', 'package.json');
+  const serverPackageJson = join(__dirname, '..', 'server', 'package.json');
+  const distPackageJson = join(__dirname, '..', 'dist', 'package.json');
   cpSync(serverPackageJson, distPackageJson);
   
   // Install only production dependencies in dist
