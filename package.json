@@ -1,0 +1,30 @@
+{
+  "name": "flower-fairies",
+  "version": "1.0.0",
+  "description": "Flower Fairies e-commerce platform",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "build": "node scripts/build.js",
+    "build:client": "npm run build --workspace=client",
+    "build:server": "npm run build --workspace=server",
+    "start": "node dist/server/index.js",
+    "dev": "npm run dev --workspace=server & npm run dev --workspace=client",
+    "smoke": "node scripts/smoke-test.js",
+    "clean": "rm -rf dist node_modules client/node_modules server/node_modules"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  },
+  "devDependencies": {
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1"
+  },
+  "author": "",
+  "license": "ISC"
+}

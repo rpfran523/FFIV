@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: flower-fairies
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: flower-fairies-db
+          property: connectionString
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        fromService:
+          type: web
+          name: flower-fairies
+          property: host
+
+databases:
+  - name: flower-fairies-db
+    databaseName: flower_fairies
+    user: flower_fairies_user
+    plan: starter
