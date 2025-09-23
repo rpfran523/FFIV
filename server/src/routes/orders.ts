@@ -394,4 +394,26 @@ router.post('/:id/cancel', authenticate, async (req: AuthRequest, res: Response,
   }
 });
 
+// Alias for mobile app: /api/orders/:id/assign -> driver accept
+router.post('/:id/assign', authenticate, authorize('driver'), async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    const driver = await queryOne<any>('SELECT id FROM drivers WHERE user_id = $1 AND available = true', [req.user!.id]);
+    if (!driver) throw new AppError(400, 'Driver not available');
+
+    const order = await queryOne<any>(
+      `UPDATE orders SET driver_id = $1, status = 'delivering', updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2 AND status = 'ready' AND driver_id IS NULL RETURNING *`,
+      [driver.id, id]
+    );
+    if (!order) throw new AppError(400, 'Order is no longer available');
+
+    sseHub.notifyOrderUpdate(order);
+    res.json(order);
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

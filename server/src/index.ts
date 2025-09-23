@@ -33,27 +33,7 @@ import { cacheService } from './services/cache';
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// Initialize services
-async function initializeServices() {
-  try {
-    // Initialize database (optional for demo)
-    try {
-      await initializeDatabase();
-      console.log('✅ Database initialized');
-    } catch (dbError) {
-      console.warn('⚠️  Database initialization failed (continuing without DB):', dbError.message);
-    }
-
-    // Initialize cache
-    await cacheService.connect();
-    console.log('✅ Cache service initialized');
-  } catch (error) {
-    console.error('❌ Failed to initialize services:', error);
-    process.exit(1);
-  }
-}
-
-// Middleware
+// CORS & security
 app.use(helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
   crossOriginEmbedderPolicy: false,
@@ -63,9 +43,7 @@ const allowedOrigins = ['http://localhost:5173'];
 if (process.env.NODE_ENV === 'production') {
   allowedOrigins.push(process.env.FRONTEND_URL || 'https://ff-chi.onrender.com');
 }
-
 const FRONTEND_URL = process.env.FRONTEND_URL || allowedOrigins[0];
-
 app.use(cors({
   origin: FRONTEND_URL,
   credentials: true,
@@ -74,10 +52,31 @@ app.use(cors({
 }));
 app.options('*', cors({ origin: FRONTEND_URL, credentials: true }));
 
+// Mount Stripe webhook BEFORE json parser to preserve raw body
+app.use('/api/stripe', (req, res, next) => next(), stripeRoutes);
+
+// Parsers & logging
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(requestLogger);
+
+// Initialize services
+async function initializeServices() {
+  try {
+    try {
+      await initializeDatabase();
+      console.log('✅ Database initialized');
+    } catch (dbError) {
+      console.warn('⚠️  Database initialization failed (continuing without DB):', (dbError as any).message);
+    }
+    await cacheService.connect();
+    console.log('✅ Cache service initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize services:', error);
+    process.exit(1);
+  }
+}
 
 // Health check
 app.get('/health', (req, res) => {
@@ -98,18 +97,14 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/driver', driverRoutes);
-app.use('/api/stripe', stripeRoutes);
 
 // SSE endpoint
 app.get('/api/events', sseHub.handleConnection);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  // In the Docker container, client files are at /app/dist/client
   const clientBuildPath = path.join(process.cwd(), 'dist', 'client');
   app.use(express.static(clientBuildPath));
-  
-  // Catch all handler for client-side routing
   app.get('*', (req, res) => {
     res.sendFile(path.join(clientBuildPath, 'index.html'));
   });
@@ -121,14 +116,12 @@ app.use(errorHandler);
 // Start server
 async function start() {
   await initializeServices();
-  
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`📝 Environment: ${process.env.NODE_ENV}`);
   });
 }
 
-// Handle graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received. Shutting down gracefully...');
   await cacheService.disconnect();
