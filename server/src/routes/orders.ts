@@ -9,6 +9,8 @@ import { AuthRequest } from '../types';
 import { sseHub } from '../services/sse';
 import { cacheService } from '../services/cache';
 
+const FLAG_ACCEPT_ORDERS = 'feature:accept_orders';
+
 const router = Router();
 
 // Validation schemas
@@ -181,6 +183,13 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response, next: N
 // POST /api/orders
 router.post('/', authenticate, orderLimiter, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    // Feature flag check
+    const flagRaw = await cacheService.get(FLAG_ACCEPT_ORDERS);
+    const acceptOrders = flagRaw === null ? true : flagRaw === '1' || flagRaw === true;
+    if (!acceptOrders) {
+      throw new AppError(503, 'Ordering is temporarily disabled');
+    }
+
     const { error, value } = createOrderSchema.validate(req.body);
     if (error) throw error;
     

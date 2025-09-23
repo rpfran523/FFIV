@@ -140,7 +140,9 @@ async function runSmokeTests() {
 
   // Test 6: Create Test Order (Skip Stripe)
   await test('Create Order', async () => {
-    // First get a product
+    const flag = await api.get('/admin/features/accept-orders', { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} });
+    console.log(`   Accept orders feature: ${flag.data?.enabled !== false}`);
+
     const productsResponse = await api.get('/products');
     if (!productsResponse.data.products?.length) {
       console.log('   No products available, skipping order test');
@@ -155,26 +157,17 @@ async function runSmokeTests() {
     }
 
     const response = await api.post('/orders', {
-      items: [{
-        variantId: variant.id,
-        quantity: 1,
-      }],
+      items: [{ variantId: variant.id, quantity: 1 }],
       deliveryAddress: '123 Smoke Test St, Test City, TC 12345',
       deliveryInstructions: 'Smoke test order - please ignore',
-    }, {
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-    });
+    }, { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} });
 
     if (response.status === 201) {
       console.log(`   Order created: ${response.data.id}`);
-      
-      // Try to cancel the order to clean up
-      await api.post(`/orders/${response.data.id}/cancel`, {}, {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-      });
-      console.log('   Order cancelled for cleanup');
     } else if (response.status === 429) {
       console.log('   Rate limited (expected behavior)');
+    } else if (response.status === 503) {
+      console.log('   Ordering disabled by feature flag');
     } else {
       throw new Error(`Order creation returned ${response.status}`);
     }

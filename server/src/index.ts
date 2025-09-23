@@ -121,7 +121,7 @@ app.get('/api/events', sseHub.handleConnection);
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
   const clientBuildPath = path.join(process.cwd(), 'dist', 'client');
-  app.use(express.static(clientBuildPath));
+  app.use(express.static(clientBuildPath, { maxAge: '7d', etag: true, lastModified: true, cacheControl: true }));
   app.get('*', (req, res) => {
     res.sendFile(path.join(clientBuildPath, 'index.html'));
   });

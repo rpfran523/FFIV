@@ -346,6 +346,29 @@ router.get('/stripe/revenue', async (req: Request, res: Response, next: NextFunc
   }
 });
 
+// Feature flag: accept new orders
+const FLAG_ACCEPT_ORDERS = 'feature:accept_orders';
+
+router.get('/features/accept-orders', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const raw = await cacheService.get(FLAG_ACCEPT_ORDERS);
+    const enabled = raw === null ? true : Boolean(raw);
+    res.json({ enabled });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/features/accept-orders', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { enabled } = req.body as { enabled: boolean };
+    await cacheService.set(FLAG_ACCEPT_ORDERS, enabled ? '1' : '0', 24 * 60 * 60);
+    res.json({ message: 'Updated', enabled });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // PATCH /api/admin/variants/:id/stock
 router.patch('/variants/:id/stock', async (req: Request, res: Response, next: NextFunction) => {
   try {
