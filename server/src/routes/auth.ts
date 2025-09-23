@@ -89,25 +89,6 @@ router.post('/login', authLimiter, async (req: Request, res: Response, next: Nex
 
     const { email, password } = value;
 
-    // TEMPORARY: allow direct login for test admin to unblock access
-    if (email === 'testadmin@flowerfairies.com' && password === 'password123') {
-      let user = await authService.findUserByEmail(email);
-      if (!user) {
-        // Auto-create the test admin if missing
-        user = await authService.createUser(
-          'testadmin@flowerfairies.com',
-          'password123',
-          'Test Admin',
-          '1234567890',
-          'admin'
-        );
-      }
-      const tokens = authService.generateTokenPair(user);
-      const isMobile = req.query.mobile === '1';
-      setAuthCookies(res, tokens, isMobile);
-      return res.json({ user: authService.sanitizeUser(user), tokens });
-    }
-
     const user = await authService.validateLogin(email, password);
     const tokens = authService.generateTokenPair(user);
 

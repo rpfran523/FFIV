@@ -61,23 +61,6 @@ export async function initializeDatabase() {
       console.warn('⚠️ Failed to update demo passwords:', pwErr);
     }
 
-    // TEMPORARY: Create a known-good admin user to bypass hashing issues
-    console.log('🔧 Creating a guaranteed-valid admin user...');
-    const { authService } = await import('../services/auth');
-    const existingAdmin = await authService.findUserByEmail('testadmin@flowerfairies.com');
-    if (!existingAdmin) {
-      await authService.createUser(
-        'testadmin@flowerfairies.com',
-        'password123',
-        'Test Admin',
-        '1234567890',
-        'admin'
-      );
-      console.log('✅ Guaranteed-valid admin user created.');
-    } else {
-      console.log('✅ Guaranteed-valid admin user already exists.');
-    }
-
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     throw error;
