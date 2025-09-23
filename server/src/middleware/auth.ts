@@ -12,10 +12,10 @@ export const authenticate = async (
   try {
     let token: string | undefined;
 
-    // Check for token in Authorization header
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7);
+    // Check for token in Authorization header (case-insensitive)
+    const authHeader = req.headers.authorization || '';
+    if (authHeader.toLowerCase().startsWith('bearer ')) {
+      token = authHeader.slice(7);
     }
 
     // Check for token in cookies if not in header
@@ -75,9 +75,9 @@ export const optionalAuthenticate = async (
   try {
     let token: string | undefined;
 
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7);
+    const authHeader = req.headers.authorization || '';
+    if (authHeader.toLowerCase().startsWith('bearer ')) {
+      token = authHeader.slice(7);
     } else if (req.cookies?.accessToken) {
       token = req.cookies.accessToken;
     }

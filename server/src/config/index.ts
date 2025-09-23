@@ -2,6 +2,12 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.JWT_ACCESS_SECRET || !process.env.JWT_REFRESH_SECRET) {
+    throw new Error('JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be defined in production');
+  }
+}
+
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '8080', 10),
@@ -11,8 +17,8 @@ export const config = {
   },
   
   jwt: {
-    accessSecret: process.env.JWT_ACCESS_SECRET || 'default-access-secret',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'default-refresh-secret',
+    accessSecret: process.env.JWT_ACCESS_SECRET || 'dev-access-secret',
+    refreshSecret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
     accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },

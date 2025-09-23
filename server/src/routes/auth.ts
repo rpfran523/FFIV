@@ -165,9 +165,12 @@ router.post('/refresh', async (req: Request, res: Response, next: NextFunction) 
 
 // POST /api/auth/logout
 router.post('/logout', authenticate, async (req: Request, res: Response) => {
-  // Clear cookies
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
+  const isProd = process.env.NODE_ENV === 'production';
+  const sameSite: 'lax' | 'none' = isProd ? 'none' : 'lax';
+  const secure = isProd ? true : false;
+
+  res.clearCookie('accessToken', { httpOnly: true, secure, sameSite, path: '/' });
+  res.clearCookie('refreshToken', { httpOnly: true, secure, sameSite, path: '/' });
 
   res.json({ message: 'Logged out successfully' });
 });
