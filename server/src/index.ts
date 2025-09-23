@@ -27,6 +27,7 @@ import orderRoutes from './routes/orders';
 import adminRoutes from './routes/admin';
 import driverRoutes from './routes/driver';
 import stripeRoutes from './routes/stripe';
+import searchRoutes from './routes/search';
 import { sseHub } from './services/sse';
 import { initializeDatabase } from './db/initialize';
 import { cacheService } from './services/cache';
@@ -114,6 +115,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/driver', driverRoutes);
+app.use('/api/search', searchRoutes);
 
 // SSE endpoint
 app.get('/api/events', sseHub.handleConnection);
