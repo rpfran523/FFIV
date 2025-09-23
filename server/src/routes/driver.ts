@@ -333,4 +333,51 @@ router.get('/earnings', async (req: AuthRequest, res: Response, next: NextFuncti
   }
 });
 
+// GET /api/driver/nearby?lat=..&lng=..&radiusKm=5
+router.get('/nearby', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const lat = parseFloat(req.query.lat as string);
+    const lng = parseFloat(req.query.lng as string);
+    const radiusKm = parseFloat((req.query.radiusKm as string) || '5');
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      throw new AppError(400, 'lat and lng are required');
+    }
+
+    const drivers = await query<any>(`
+      SELECT d.id, u.name, u.email,
+             dl.lat::float8 as lat, dl.lng::float8 as lng, dl.updated_at,
+             (
+               6371 * acos(
+                 cos(radians($1)) * cos(radians(dl.lat::float8)) * cos(radians(dl.lng::float8) - radians($2)) +
+                 sin(radians($1)) * sin(radians(dl.lat::float8))
+               )
+             ) as distance_km
+      FROM drivers d
+      JOIN users u ON d.user_id = u.id
+      JOIN driver_locations dl ON dl.driver_id = d.id
+      WHERE d.available = true
+      HAVING (
+        6371 * acos(
+          cos(radians($1)) * cos(radians(dl.lat::float8)) * cos(radians(dl.lng::float8) - radians($2)) +
+          sin(radians($1)) * sin(radians(dl.lat::float8))
+        )
+      ) <= $3
+      ORDER BY distance_km ASC
+      LIMIT 50
+    `, [lat, lng, radiusKm]);
+
+    res.json(drivers.map(d => ({
+      id: d.id,
+      name: d.name,
+      email: d.email,
+      lat: Number(d.lat),
+      lng: Number(d.lng),
+      distanceKm: Number(d.distance_km),
+      updatedAt: d.updated_at,
+    })));
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
+import rateLimit from 'express-rate-limit';
 
 // Load environment variables
 dotenv.config();
@@ -35,9 +36,25 @@ const PORT = process.env.PORT || 8080;
 
 // CORS & security
 app.use(helmet({
-  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
+  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
+    useDefaults: true,
+    directives: {
+      "default-src": ["'self'"],
+      "base-uri": ["'self'"],
+      "font-src": ["'self'", "https:"],
+      "img-src": ["'self'", "data:", "https:"],
+      "object-src": ["'none'"],
+      "script-src": ["'self'", "https:"],
+      "style-src": ["'self'", "'unsafe-inline'", "https:"],
+      "connect-src": ["'self'", process.env.FRONTEND_URL || 'https://ff-chi.onrender.com', "https:"]
+    }
+  } : false,
   crossOriginEmbedderPolicy: false,
 }));
+
+// Basic API rate limiter
+const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false });
+app.use('/api', apiLimiter);
 
 const allowedOrigins = ['http://localhost:5173'];
 if (process.env.NODE_ENV === 'production') {
