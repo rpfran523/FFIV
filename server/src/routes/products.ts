@@ -12,52 +12,44 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { category, search, sort = 'name', order = 'asc', limit = '50', offset = '0' } = req.query;
     
-    // Build cache key
     const cacheKey = `products:list:${category || 'all'}:${search || ''}:${sort}:${order}:${limit}:${offset}`;
-    
-    // Try to get from cache
     const cached = await cacheService.get(cacheKey);
     if (cached) {
       return res.json(cached);
     }
 
-    // Build query - simplified to avoid JSON aggregation issues
+    // Base product query
     let sql = `
       SELECT p.id, p.name, p.description, p.category, 
              p.image_url as "imageUrl", p.base_price as "basePrice", 
-             p.created_at as "createdAt", p.updated_at as "updatedAt"
+             p.created_at as "createdAt", p.updated_at as "updatedAt",
+             COALESCE(
+               (SELECT MIN(pr.price) FROM variants v2 JOIN prices pr ON v2.id = pr.variant_id WHERE v2.product_id = p.id),
+               p.base_price
+             ) as min_price
       FROM products p
       WHERE p.active = true
     `;
     
     const params: any[] = [];
-    
-    // Add filters
-    if (category) {
-      params.push(category);
-      sql += ` AND p.category = $${params.length}`;
-    }
-    
-    if (search) {
-      params.push(`%${search}%`);
-      sql += ` AND (p.name ILIKE $${params.length} OR p.description ILIKE $${params.length})`;
-    }
-    
-    // Add sorting
-    const allowedSortFields = ['name', 'base_price', 'created_at'];
-    const sortField = allowedSortFields.includes(sort as string) ? sort : 'name';
-    const sortOrder = order === 'desc' ? 'DESC' : 'ASC';
-    sql += ` ORDER BY p.${sortField} ${sortOrder}`;
-    
-    // Add pagination
+    if (category) { params.push(category); sql += ` AND p.category = $${params.length}`; }
+    if (search) { params.push(`%${search}%`); sql += ` AND (p.name ILIKE $${params.length} OR p.description ILIKE $${params.length})`; }
+
+    // Sorting
+    const sortKey = (sort as string).toLowerCase();
+    let sortClause = 'p.name ASC';
+    if (sortKey === 'price_low') sortClause = 'min_price ASC';
+    else if (sortKey === 'price_high') sortClause = 'min_price DESC';
+    else if (sortKey === 'created_at') sortClause = `p.created_at ${order === 'desc' ? 'DESC' : 'ASC'}`;
+    sql += ` ORDER BY ${sortClause}`;
+
     const limitNum = Math.min(parseInt(limit as string) || 50, 100);
     const offsetNum = parseInt(offset as string) || 0;
     params.push(limitNum, offsetNum);
     sql += ` LIMIT $${params.length - 1} OFFSET $${params.length}`;
-    
+
     const products = await query<any>(sql, params);
-    
-    // Get variants for each product separately
+
     for (const product of products) {
       const variants = await query<any>(`
         SELECT v.id, v.name, v.sku, v.attributes,
@@ -67,38 +59,21 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
         WHERE v.product_id = $1
         ORDER BY v.name
       `, [product.id]);
-      
       product.variants = variants;
     }
-    
-    // Get total count
+
     let countSql = 'SELECT COUNT(p.id) as total FROM products p WHERE p.active = true';
     const countParams: any[] = [];
-    
-    if (category) {
-      countParams.push(category);
-      countSql += ` AND p.category = $${countParams.length}`;
-    }
-    
-    if (search) {
-      countParams.push(`%${search}%`);
-      countSql += ` AND (p.name ILIKE $${countParams.length} OR p.description ILIKE $${countParams.length})`;
-    }
-    
+    if (category) { countParams.push(category); countSql += ` AND p.category = $${countParams.length}`; }
+    if (search) { countParams.push(`%${search}%`); countSql += ` AND (p.name ILIKE $${countParams.length} OR p.description ILIKE $${countParams.length})`; }
     const [{ total }] = await query<{ total: string }>(countSql, countParams);
-    
+
     const result = {
       products,
-      pagination: {
-        total: parseInt(total),
-        limit: limitNum,
-        offset: offsetNum,
-      },
+      pagination: { total: parseInt(total), limit: limitNum, offset: offsetNum },
     };
-    
-    // Cache the result
+
     await cacheService.set(cacheKey, result, config.cache.ttl.products);
-    
     res.json(result);
   } catch (error) {
     next(error);
