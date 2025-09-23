@@ -1,38 +1,47 @@
 import { pool } from './pool';
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 
-// Use process.cwd() for CommonJS compatibility
-const __dirname = path.join(process.cwd(), 'server', 'src', 'db');
-
 export async function initializeDatabase() {
+  const client = await pool.connect();
   try {
-    // Test database connection with timeout
-    console.log('🔗 Testing database connection...');
-    await pool.query('SELECT NOW()');
-    console.log('✅ Database connection established');
+    console.log('🔗 Checking database schema...');
 
-    // Check if tables exist
-    const tableCheck = await pool.query(`
+    // Check if the 'users' table exists
+    const tableCheck = await client.query(`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'users'
+        WHERE table_schema = 'public' AND table_name = 'users'
       );
     `);
 
-    if (!tableCheck.rows[0].exists) {
-      console.log('📋 Database tables not found - they should be created manually');
-      console.log('   Run schema.sql and seed.sql on your RDS instance');
-    } else {
-      console.log('✅ Database tables already exist');
-      
-      // Test a simple query to ensure everything works
-      const userCount = await pool.query('SELECT COUNT(*) as count FROM users');
-      console.log(`✅ Found ${userCount.rows[0].count} users in database`);
+    if (tableCheck.rows[0].exists) {
+      console.log('✅ Database schema already exists.');
+      return;
     }
+
+    console.log('🟡 Tables not found. Initializing database...');
+
+    // Find the absolute path to the sql files
+    const schemaPath = path.join(process.cwd(), 'server', 'db', 'schema.sql');
+    const seedPath = path.join(process.cwd(), 'server', 'db', 'seed.sql');
+    
+    // Read and execute schema.sql
+    console.log('Executing schema.sql...');
+    const schemaSql = await fs.readFile(schemaPath, 'utf8');
+    await client.query(schemaSql);
+    console.log('✅ Schema created successfully.');
+
+    // Read and execute seed.sql
+    console.log('Executing seed.sql...');
+    const seedSql = await fs.readFile(seedPath, 'utf8');
+    await client.query(seedSql);
+    console.log('✅ Database seeded successfully.');
+
   } catch (error) {
-    console.error('❌ Database initialization failed:', error.message);
+    console.error('❌ Database initialization failed:', error);
     throw error;
+  } finally {
+    client.release();
   }
 }
