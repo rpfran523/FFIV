@@ -19,7 +19,7 @@ const CheckoutPage: React.FC = () => {
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
   const [cardholderName, setCardholderName] = useState('');
-  const addressInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const addressInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const apiKey = (window as any).ENV_GOOGLE_PLACES_API_KEY || import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
@@ -292,14 +292,14 @@ const CheckoutPage: React.FC = () => {
                   <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
                     Delivery Address *
                   </label>
-                  <textarea
+                  <input
                     id="address"
                     ref={addressInputRef}
+                    type="text"
                     value={deliveryAddress}
                     onChange={(e) => setDeliveryAddress(e.target.value)}
                     placeholder="Enter your full delivery address..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    rows={3}
                     required
                   />
                 </div>
