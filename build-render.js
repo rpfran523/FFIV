@@ -59,6 +59,18 @@ try {
     throw new Error('Server build directory not found');
   }
 
+  // Copy database scripts
+  console.log('📦 Copying database scripts...');
+  const dbScriptsPath = join(__dirname, 'server', 'db');
+  const distDbPath = join(__dirname, 'dist', 'server', 'db');
+  if (existsSync(dbScriptsPath)) {
+    cpSync(dbScriptsPath, distDbPath, { recursive: true });
+    console.log('✅ Database scripts copied successfully');
+  } else {
+    // This is not a critical error, just a warning
+    console.warn('⚠️ Database scripts directory not found, skipping copy.');
+  }
+
   // Copy server package.json and install production dependencies
   console.log('📦 Setting up production dependencies...');
   const serverPackageJson = join(__dirname, 'server', 'package.json');

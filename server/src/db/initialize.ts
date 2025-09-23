@@ -22,12 +22,13 @@ export async function initializeDatabase() {
 
     console.log('🟡 Tables not found. Initializing database...');
 
-    // Find the absolute path to the sql files
-    const schemaPath = path.join(process.cwd(), 'server', 'db', 'schema.sql');
-    const seedPath = path.join(process.cwd(), 'server', 'db', 'seed.sql');
+    // In a compiled JS file, __dirname refers to the directory of the file.
+    // The db/ folder with SQL scripts will be copied to the same directory.
+    const schemaPath = path.join(__dirname, 'db', 'schema.sql');
+    const seedPath = path.join(__dirname, 'db', 'seed.sql');
     
     // Read and execute schema.sql
-    console.log('Executing schema.sql...');
+    console.log(`Executing schema.sql from ${schemaPath}...`);
     const schemaSql = await fs.readFile(schemaPath, 'utf8');
     await client.query(schemaSql);
     console.log('✅ Schema created successfully.');
