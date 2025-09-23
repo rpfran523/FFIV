@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -19,6 +19,33 @@ const CheckoutPage: React.FC = () => {
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
   const [cardholderName, setCardholderName] = useState('');
+  const addressInputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    const apiKey = (window as any).ENV_GOOGLE_PLACES_API_KEY || import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
+    if (!apiKey) return;
+    const scriptId = 'google-places';
+    if (!document.getElementById(scriptId)) {
+      const s = document.createElement('script');
+      s.id = scriptId;
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+      s.async = true;
+      s.onload = () => init();
+      document.body.appendChild(s);
+    } else {
+      init();
+    }
+    function init() {
+      try {
+        if (!(window as any).google?.maps?.places || !addressInputRef.current) return;
+        const ac = new (window as any).google.maps.places.Autocomplete(addressInputRef.current, { types: ['address'], fields: ['formatted_address'] });
+        ac.addListener('place_changed', () => {
+          const place = ac.getPlace();
+          if (place?.formatted_address) setDeliveryAddress(place.formatted_address);
+        });
+      } catch {}
+    }
+  }, []);
 
   const subtotal = getSubtotal();
   const total = subtotal; // No delivery fee - flat pricing
@@ -267,6 +294,7 @@ const CheckoutPage: React.FC = () => {
                   </label>
                   <textarea
                     id="address"
+                    ref={addressInputRef}
                     value={deliveryAddress}
                     onChange={(e) => setDeliveryAddress(e.target.value)}
                     placeholder="Enter your full delivery address..."
