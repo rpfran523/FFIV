@@ -57,19 +57,6 @@ const AuthPage: React.FC = () => {
     }
   };
 
-  // Demo credentials hint
-  const fillDemoCredentials = (role: 'customer' | 'driver' | 'admin') => {
-    const credentials = {
-      customer: { email: 'customer1@flowerfairies.com', password: 'customer123' },
-      driver: { email: 'driver1@flowerfairies.com', password: 'driver123' },
-      admin: { email: 'admin@flowerfairies.com', password: 'admin123' },
-    };
-
-    setEmail(credentials[role].email);
-    setPassword(credentials[role].password);
-    setIsLogin(true);
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
