@@ -10,11 +10,12 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-let accessToken: string | null = null;
+let accessToken: string | null = localStorage.getItem('ff_token') || null;
 
 // Token management
 export const setTokens = (tokens: AuthTokens) => {
   accessToken = tokens.accessToken;
+  localStorage.setItem('ff_token', tokens.accessToken);
   localStorage.setItem('refreshToken', tokens.refreshToken);
 };
 
@@ -24,6 +25,7 @@ export const getRefreshToken = () => localStorage.getItem('refreshToken');
 
 export const clearTokens = () => {
   accessToken = null;
+  localStorage.removeItem('ff_token');
   localStorage.removeItem('refreshToken');
 };
 
