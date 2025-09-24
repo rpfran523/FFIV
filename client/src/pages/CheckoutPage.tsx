@@ -20,6 +20,7 @@ const CheckoutPage: React.FC = () => {
   const [cvv, setCvv] = useState('');
   const [cardholderName, setCardholderName] = useState('');
   const addressInputRef = useRef<HTMLInputElement | null>(null);
+  const [addressTyping, setAddressTyping] = useState('');
 
   useEffect(() => {
     const apiKey = (window as any).ENV_GOOGLE_PLACES_API_KEY || import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
@@ -52,6 +53,12 @@ const CheckoutPage: React.FC = () => {
       }
     }
   }, []);
+
+  // Debounce manual typing to keep deliveryAddress in sync without blocking
+  useEffect(() => {
+    const id = setTimeout(() => setDeliveryAddress(addressTyping), 300);
+    return () => clearTimeout(id);
+  }, [addressTyping]);
 
   const subtotal = getSubtotal();
   const total = subtotal; // No delivery fee - flat pricing
@@ -303,13 +310,14 @@ const CheckoutPage: React.FC = () => {
                     ref={addressInputRef}
                     type="text"
                     value={deliveryAddress}
-                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                    onChange={(e) => { setDeliveryAddress(e.target.value); setAddressTyping(e.target.value); }}
                     placeholder="Enter your full delivery address..."
                     autoComplete="off"
                     inputMode="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
+                  <p className="text-xs text-gray-500 mt-1">If suggestions don’t appear, keep typing your full address manually.</p>
                 </div>
                 
                 <div>

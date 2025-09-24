@@ -24,44 +24,38 @@ export const useCartStore = create<CartStore>()(
 
       setCurrentUser: (userId: string) => {
         const state = get();
-        if (state.currentUserId !== userId) {
-          // Clear cart when switching users
+        if (state.currentUserId === userId) {
+          set({ currentUserId: userId });
+          return;
+        }
+        const switchingBetweenRealUsers = state.currentUserId !== 'anonymous' && userId !== 'anonymous' && state.currentUserId !== userId;
+        if (switchingBetweenRealUsers) {
           set({ currentUserId: userId, items: [] });
+        } else {
+          // Do not clear when moving to or from anonymous during refresh
+          set({ currentUserId: userId });
         }
       },
 
       addItem: (variant, product, quantity = 1) => {
         set((state) => {
-          const existingItemIndex = state.items.findIndex(
-            (item) => item.variantId === variant.id
-          );
-
+          const existingItemIndex = state.items.findIndex((item) => item.variantId === variant.id);
           if (existingItemIndex !== -1) {
-            // Update quantity if item already exists
             const newItems = [...state.items];
             newItems[existingItemIndex].quantity += quantity;
             return { items: newItems };
           }
-
-          // Add new item
           return {
             items: [
               ...state.items,
-              {
-                variantId: variant.id,
-                variant,
-                product,
-                quantity,
-              },
+              { variantId: variant.id, variant, product, quantity },
             ],
           };
         });
       },
 
       removeItem: (variantId) => {
-        set((state) => ({
-          items: state.items.filter((item) => item.variantId !== variantId),
-        }));
+        set((state) => ({ items: state.items.filter((item) => item.variantId !== variantId) }));
       },
 
       updateQuantity: (variantId, quantity) => {
@@ -69,11 +63,8 @@ export const useCartStore = create<CartStore>()(
           get().removeItem(variantId);
           return;
         }
-
         set((state) => {
-          const newItems = state.items.map((item) =>
-            item.variantId === variantId ? { ...item, quantity } : item
-          );
+          const newItems = state.items.map((item) => (item.variantId === variantId ? { ...item, quantity } : item));
           return { items: newItems };
         });
       },
@@ -84,9 +75,7 @@ export const useCartStore = create<CartStore>()(
 
       clearCartForUser: (userId: string) => {
         const state = get();
-        if (state.currentUserId === userId) {
-          set({ items: [] });
-        }
+        if (state.currentUserId === userId) set({ items: [] });
       },
 
       getSubtotal: () => {
@@ -99,8 +88,6 @@ export const useCartStore = create<CartStore>()(
         return items.reduce((total, item) => total + item.quantity, 0);
       },
     }),
-    {
-      name: 'flower-fairies-cart',
-    }
+    { name: 'flower-fairies-cart' }
   )
 );
