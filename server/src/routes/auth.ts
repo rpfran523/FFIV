@@ -38,7 +38,8 @@ const setAuthCookies = (res: Response, tokens: { accessToken: string; refreshTok
       httpOnly: true,
       secure,
       sameSite,
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      maxAge: 4 * 60 * 60 * 1000, // 4 hours
+      path: '/',
     });
 
     res.cookie('refreshToken', tokens.refreshToken, {
@@ -46,6 +47,7 @@ const setAuthCookies = (res: Response, tokens: { accessToken: string; refreshTok
       secure,
       sameSite,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
     });
   }
 };

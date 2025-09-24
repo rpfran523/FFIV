@@ -25,25 +25,31 @@ const CheckoutPage: React.FC = () => {
     const apiKey = (window as any).ENV_GOOGLE_PLACES_API_KEY || import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
     if (!apiKey) return;
     const scriptId = 'google-places';
+    const load = () => init();
     if (!document.getElementById(scriptId)) {
       const s = document.createElement('script');
       s.id = scriptId;
       s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
       s.async = true;
-      s.onload = () => init();
+      s.onerror = () => console.warn('Google Places script failed to load');
+      s.onload = load;
       document.body.appendChild(s);
     } else {
-      init();
+      load();
     }
     function init() {
       try {
         if (!(window as any).google?.maps?.places || !addressInputRef.current) return;
-        const ac = new (window as any).google.maps.places.Autocomplete(addressInputRef.current, { types: ['address'], fields: ['formatted_address'] });
+        const input = addressInputRef.current;
+        input.setAttribute('autocomplete', 'off');
+        const ac = new (window as any).google.maps.places.Autocomplete(input, { types: ['address'], fields: ['formatted_address'] });
         ac.addListener('place_changed', () => {
           const place = ac.getPlace();
           if (place?.formatted_address) setDeliveryAddress(place.formatted_address);
         });
-      } catch {}
+      } catch (e) {
+        console.warn('Places init error', e);
+      }
     }
   }, []);
 
@@ -299,6 +305,8 @@ const CheckoutPage: React.FC = () => {
                     value={deliveryAddress}
                     onChange={(e) => setDeliveryAddress(e.target.value)}
                     placeholder="Enter your full delivery address..."
+                    autoComplete="off"
+                    inputMode="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
