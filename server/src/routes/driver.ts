@@ -173,35 +173,55 @@ router.get('/orders/active', async (req: AuthRequest, res: Response, next: NextF
 });
 
 // POST /api/driver/orders/:id/accept
+// Race-proof with atomic SQL - only ONE driver can accept
 router.post('/orders/:id/accept', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     
-    // Get driver
+    // Get driver profile
     const driver = await queryOne<any>(
       'SELECT id FROM drivers WHERE user_id = $1 AND available = true',
       [req.user!.id]
     );
     
     if (!driver) {
-      throw new AppError(400, 'Driver not available');
+      throw new AppError(400, 'Driver not available or offline');
     }
     
-    // Try to claim the order
+    // Atomic order assignment - prevents race conditions
+    // WHERE clause ensures only one driver can claim the order
     const order = await queryOne<any>(`
       UPDATE orders 
-      SET driver_id = $1, status = 'delivering', updated_at = CURRENT_TIMESTAMP
+      SET driver_id = $1, 
+          status = 'delivering', 
+          updated_at = CURRENT_TIMESTAMP
       WHERE id = $2 
-        AND status = 'ready'
+        AND status IN ('pending', 'processing', 'ready')
         AND driver_id IS NULL
       RETURNING *
     `, [driver.id, id]);
     
     if (!order) {
-      throw new AppError(400, 'Order is no longer available');
+      // Order was already claimed by another driver or doesn't exist
+      const existingOrder = await queryOne<any>(
+        'SELECT id, status, driver_id FROM orders WHERE id = $1',
+        [id]
+      );
+      
+      if (!existingOrder) {
+        throw new AppError(404, 'Order not found');
+      }
+      
+      if (existingOrder.driver_id) {
+        throw new AppError(409, 'Order already accepted by another driver');
+      }
+      
+      throw new AppError(409, 'Order is no longer available');
     }
     
-    // Notify via SSE
+    console.log(`✅ Order ${id} accepted by driver ${driver.id}`);
+    
+    // Notify customer and admin via SSE
     sseHub.notifyOrderUpdate(order);
     
     res.json(order);
