@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
-import { authenticate, authorize } from '../middleware/auth';
+import { requireAuth, requireRole } from '../middleware/auth';
 import { query, queryOne } from '../db/pool';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../types';
@@ -9,7 +9,7 @@ import { sseHub } from '../services/sse';
 const router = Router();
 
 // All routes require driver authentication
-router.use(authenticate);
+router.use(requireAuth);
 router.use(authorize('driver'));
 
 // Validation schemas

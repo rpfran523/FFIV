@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import { v4 as uuidv4 } from 'uuid';
 import { query, queryOne, transaction } from '../db/pool';
-import { authenticate, authorize } from '../middleware/auth';
+import { requireAuth, requireRole, requireOrderAccess, authorize } from '../middleware/auth';
 import { orderLimiter } from '../middleware/rateLimiter';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../types';
@@ -50,7 +50,7 @@ const calculateOrderTotals = (subtotal: number) => {
 };
 
 // GET /api/orders (customer gets their orders)
-router.get('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/', requireAuth, requireRole('customer'), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { status, limit = '20', offset = '0' } = req.query;
     
@@ -117,7 +117,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
 });
 
 // GET /api/orders/:id
-router.get('/:id', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/:id', requireAuth, requireOrderAccess(), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     
@@ -181,7 +181,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response, next: N
 });
 
 // POST /api/orders
-router.post('/', authenticate, orderLimiter, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     // Feature flag check
     const flagRaw = await cacheService.get(FLAG_ACCEPT_ORDERS);
@@ -292,7 +292,7 @@ router.post('/', authenticate, orderLimiter, async (req: AuthRequest, res: Respo
 });
 
 // PATCH /api/orders/:id/status (admin/driver only)
-router.patch('/:id/status', authenticate, authorize('admin', 'driver'), async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.patch('/:id/status', requireAuth, authorize('admin', 'driver'), requireOrderAccess(), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const { error, value } = updateOrderStatusSchema.validate(req.body);
@@ -347,7 +347,7 @@ router.patch('/:id/status', authenticate, authorize('admin', 'driver'), async (r
 });
 
 // POST /api/orders/:id/cancel (customer can cancel their own orders)
-router.post('/:id/cancel', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/:id/cancel', requireAuth, requireOrderAccess(), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     
@@ -404,7 +404,7 @@ router.post('/:id/cancel', authenticate, async (req: AuthRequest, res: Response,
 });
 
 // Alias for mobile app: /api/orders/:id/assign -> driver accept
-router.post('/:id/assign', authenticate, authorize('driver'), async (req: any, res: Response, next: NextFunction) => {
+router.post('/:id/assign', requireAuth, requireRole('driver'), async (req: any, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
 

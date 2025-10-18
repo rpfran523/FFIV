@@ -96,3 +96,59 @@ export const optionalAuthenticate = async (
 
   next();
 };
+
+// Stricter RBAC aliases for clarity
+export const requireAuth = authenticate;
+
+export type Role = 'customer' | 'driver' | 'admin';
+
+export const requireRole = (role: Role) => {
+  return authorize(role);
+};
+
+// Order ownership check - only customer owner, assigned driver, or admin
+export const requireOrderAccess = () => {
+  return async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) {
+        return next(new AppError(401, 'Authentication required'));
+      }
+
+      const orderId = req.params.id;
+      if (!orderId) {
+        return next(new AppError(400, 'Order ID required'));
+      }
+
+      // Import query function
+      const { query } = await import('../db/pool');
+      
+      // Fetch order
+      const orderResult = await query(
+        'SELECT id, user_id, driver_id FROM orders WHERE id = $1',
+        [orderId]
+      );
+
+      if (orderResult.length === 0) {
+        return next(new AppError(404, 'Order not found'));
+      }
+
+      const order = orderResult[0];
+      const user = req.user;
+
+      // Check access: owner, assigned driver, or admin
+      const isOwner = user.role === 'customer' && order.user_id === user.id;
+      const isDriver = user.role === 'driver' && order.driver_id === user.id;
+      const isAdmin = user.role === 'admin';
+
+      if (!(isOwner || isDriver || isAdmin)) {
+        return next(new AppError(403, 'Access denied to this order'));
+      }
+
+      // Attach order to request for use in handler
+      (req as any).order = order;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};
