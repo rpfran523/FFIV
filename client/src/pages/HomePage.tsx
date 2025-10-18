@@ -25,18 +25,12 @@ const HomePage: React.FC = () => {
             <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
               Magical floral arrangements delivered with fairy-tale speed and enchanting freshness
             </p>
-            <div className="space-x-4">
+            <div>
               <Link
                 to="/products"
                 className="inline-block bg-white text-primary-600 px-8 py-3 rounded-md font-semibold hover:bg-gray-100 transition"
               >
                 Shop Now
-              </Link>
-              <Link
-                to="/products?category=Occasions"
-                className="inline-block bg-white/20 text-white px-8 py-3 rounded-md font-semibold hover:bg-white/30 transition border border-white"
-              >
-                Special Occasions
               </Link>
             </div>
           </div>

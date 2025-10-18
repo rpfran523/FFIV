@@ -317,7 +317,6 @@ const CheckoutPage: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
-                  <p className="text-xs text-gray-500 mt-1">If suggestions don’t appear, keep typing your full address manually.</p>
                 </div>
                 
                 <div>
