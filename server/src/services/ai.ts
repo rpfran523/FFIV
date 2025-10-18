@@ -1,8 +1,11 @@
 import OpenAI from 'openai';
 import { cacheService } from './cache';
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const MODEL = 'text-embedding-3-small';
+const client = new OpenAI({ 
+  apiKey: process.env.TOGETHER_API_KEY || process.env.OPENAI_API_KEY || 'sk-placeholder',
+  baseURL: process.env.TOGETHER_API_KEY ? 'https://api.together.xyz/v1' : undefined
+});
+const MODEL = process.env.TOGETHER_API_KEY ? 'togethercomputer/m2-bert-80M-8k-retrieval' : 'text-embedding-3-small';
 
 export async function embed(text: string): Promise<number[]> {
   const key = `embed:${MODEL}:${Buffer.from(text).toString('base64').slice(0,64)}`;

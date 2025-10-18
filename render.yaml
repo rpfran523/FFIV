@@ -22,5 +22,7 @@ services:
         value: xKj8mN3pQ9rT2uV5wY7zA1bC4dF6gH8jK2lM4nP6qR8sT0vW
       - key: JWT_REFRESH_SECRET
         value: aB3cD5eF7gH9jK2lM4nP6qR8sT0vW2xY4zA6bC8dE0fG2hJ
+      - key: TOGETHER_API_KEY
+        sync: false
       - key: PORT
         value: 10000
