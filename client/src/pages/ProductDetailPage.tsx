@@ -152,11 +152,11 @@ const ProductDetailPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Product Image */}
         <div className="space-y-4">
-          <div className="aspect-w-1 aspect-h-1 w-full">
+          <div className="w-full">
             <img
               src={product.imageUrl || 'https://via.placeholder.com/600'}
               alt={product.name}
-              className="w-full h-96 object-cover rounded-lg shadow-lg"
+              className="w-full object-contain rounded-lg shadow-lg"
             />
           </div>
           
@@ -216,15 +216,6 @@ const ProductDetailPage: React.FC = () => {
                           {getStockStatus(variant.stock).text}
                         </span>
                       </div>
-                      {variant.attributes && Object.keys(variant.attributes).length > 0 && (
-                        <div className="text-sm text-gray-500 mt-1">
-                          {Object.entries(variant.attributes).map(([key, value]) => (
-                            <span key={key} className="mr-2">
-                              {key}: {String(value)}
-                            </span>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </label>
                 ))}

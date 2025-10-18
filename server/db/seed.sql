@@ -35,48 +35,48 @@ INSERT INTO products (id, name, description, category, image_url, base_price) VA
 -- Insert variants with standardized sizing (all 4 products)
 INSERT INTO variants (id, product_id, name, sku, attributes) VALUES
 -- Twilight Blooms variants
-('850e8400-e29b-41d4-a716-446655440001', '750e8400-e29b-41d4-a716-446655440001', 'Small (3.5g)', 'TWILIGHT-SM', '{"size": "small", "weight": "3.5g"}'),
-('850e8400-e29b-41d4-a716-446655440002', '750e8400-e29b-41d4-a716-446655440001', 'Medium (7g)', 'TWILIGHT-MD', '{"size": "medium", "weight": "7g"}'),
-('850e8400-e29b-41d4-a716-446655440003', '750e8400-e29b-41d4-a716-446655440001', 'Large (14g)', 'TWILIGHT-LG', '{"size": "large", "weight": "14g"}'),
-('850e8400-e29b-41d4-a716-446655440031', '750e8400-e29b-41d4-a716-446655440001', 'Extra Large (28g)', 'TWILIGHT-XL', '{"size": "extra_large", "weight": "28g"}'),
+('850e8400-e29b-41d4-a716-446655440001', '750e8400-e29b-41d4-a716-446655440001', 'Small (3.5)', 'TWILIGHT-SM', '{"size": "small", "weight": "3.5g"}'),
+('850e8400-e29b-41d4-a716-446655440002', '750e8400-e29b-41d4-a716-446655440001', 'Medium (7)', 'TWILIGHT-MD', '{"size": "medium", "weight": "7g"}'),
+('850e8400-e29b-41d4-a716-446655440003', '750e8400-e29b-41d4-a716-446655440001', 'Large (14)', 'TWILIGHT-LG', '{"size": "large", "weight": "14g"}'),
+('850e8400-e29b-41d4-a716-446655440031', '750e8400-e29b-41d4-a716-446655440001', 'Extra Large (28)', 'TWILIGHT-XL', '{"size": "extra_large", "weight": "28g"}'),
 -- Tulip Trip variants
-('850e8400-e29b-41d4-a716-446655440004', '750e8400-e29b-41d4-a716-446655440002', 'Small (3.5g)', 'TULIP-SM', '{"size": "small", "weight": "3.5g"}'),
-('850e8400-e29b-41d4-a716-446655440005', '750e8400-e29b-41d4-a716-446655440002', 'Medium (7g)', 'TULIP-MD', '{"size": "medium", "weight": "7g"}'),
-('850e8400-e29b-41d4-a716-446655440032', '750e8400-e29b-41d4-a716-446655440002', 'Large (14g)', 'TULIP-LG', '{"size": "large", "weight": "14g"}'),
-('850e8400-e29b-41d4-a716-446655440033', '750e8400-e29b-41d4-a716-446655440002', 'Extra Large (28g)', 'TULIP-XL', '{"size": "extra_large", "weight": "28g"}'),
+('850e8400-e29b-41d4-a716-446655440004', '750e8400-e29b-41d4-a716-446655440002', 'Small (3.5)', 'TULIP-SM', '{"size": "small", "weight": "3.5g"}'),
+('850e8400-e29b-41d4-a716-446655440005', '750e8400-e29b-41d4-a716-446655440002', 'Medium (7)', 'TULIP-MD', '{"size": "medium", "weight": "7g"}'),
+('850e8400-e29b-41d4-a716-446655440032', '750e8400-e29b-41d4-a716-446655440002', 'Large (14)', 'TULIP-LG', '{"size": "large", "weight": "14g"}'),
+('850e8400-e29b-41d4-a716-446655440033', '750e8400-e29b-41d4-a716-446655440002', 'Extra Large (28)', 'TULIP-XL', '{"size": "extra_large", "weight": "28g"}'),
 -- Fleur de Haze variants
-('850e8400-e29b-41d4-a716-446655440006', '750e8400-e29b-41d4-a716-446655440003', 'Small (3.5g)', 'HAZE-SM', '{"size": "small", "weight": "3.5g"}'),
-('850e8400-e29b-41d4-a716-446655440034', '750e8400-e29b-41d4-a716-446655440003', 'Medium (7g)', 'HAZE-MD', '{"size": "medium", "weight": "7g"}'),
-('850e8400-e29b-41d4-a716-446655440035', '750e8400-e29b-41d4-a716-446655440003', 'Large (14g)', 'HAZE-LG', '{"size": "large", "weight": "14g"}'),
-('850e8400-e29b-41d4-a716-446655440036', '750e8400-e29b-41d4-a716-446655440003', 'Extra Large (28g)', 'HAZE-XL', '{"size": "extra_large", "weight": "28g"}'),
+('850e8400-e29b-41d4-a716-446655440006', '750e8400-e29b-41d4-a716-446655440003', 'Small (3.5)', 'HAZE-SM', '{"size": "small", "weight": "3.5g"}'),
+('850e8400-e29b-41d4-a716-446655440034', '750e8400-e29b-41d4-a716-446655440003', 'Medium (7)', 'HAZE-MD', '{"size": "medium", "weight": "7g"}'),
+('850e8400-e29b-41d4-a716-446655440035', '750e8400-e29b-41d4-a716-446655440003', 'Large (14)', 'HAZE-LG', '{"size": "large", "weight": "14g"}'),
+('850e8400-e29b-41d4-a716-446655440036', '750e8400-e29b-41d4-a716-446655440003', 'Extra Large (28)', 'HAZE-XL', '{"size": "extra_large", "weight": "28g"}'),
 -- Peony Dreams variants
-('850e8400-e29b-41d4-a716-446655440007', '750e8400-e29b-41d4-a716-446655440004', 'Small (3.5g)', 'PEONY-SM', '{"size": "small", "weight": "3.5g"}'),
-('850e8400-e29b-41d4-a716-446655440037', '750e8400-e29b-41d4-a716-446655440004', 'Medium (7g)', 'PEONY-MD', '{"size": "medium", "weight": "7g"}'),
-('850e8400-e29b-41d4-a716-446655440038', '750e8400-e29b-41d4-a716-446655440004', 'Large (14g)', 'PEONY-LG', '{"size": "large", "weight": "14g"}'),
-('850e8400-e29b-41d4-a716-446655440039', '750e8400-e29b-41d4-a716-446655440004', 'Extra Large (28g)', 'PEONY-XL', '{"size": "extra_large", "weight": "28g"}');
+('850e8400-e29b-41d4-a716-446655440007', '750e8400-e29b-41d4-a716-446655440004', 'Small (3.5)', 'PEONY-SM', '{"size": "small", "weight": "3.5g"}'),
+('850e8400-e29b-41d4-a716-446655440037', '750e8400-e29b-41d4-a716-446655440004', 'Medium (7)', 'PEONY-MD', '{"size": "medium", "weight": "7g"}'),
+('850e8400-e29b-41d4-a716-446655440038', '750e8400-e29b-41d4-a716-446655440004', 'Large (14)', 'PEONY-LG', '{"size": "large", "weight": "14g"}'),
+('850e8400-e29b-41d4-a716-446655440039', '750e8400-e29b-41d4-a716-446655440004', 'Extra Large (28)', 'PEONY-XL', '{"size": "extra_large", "weight": "28g"}');
 
 -- Insert prices for variants with standardized pricing (all 4 products)
 INSERT INTO prices (variant_id, price, stock) VALUES
 -- Twilight Blooms prices
-('850e8400-e29b-41d4-a716-446655440001', 50.00, 50),  -- Small (3.5g)
-('850e8400-e29b-41d4-a716-446655440002', 65.00, 40),  -- Medium (7g)
-('850e8400-e29b-41d4-a716-446655440003', 110.00, 30), -- Large (14g)
-('850e8400-e29b-41d4-a716-446655440031', 180.00, 20), -- Extra Large (28g)
+('850e8400-e29b-41d4-a716-446655440001', 50.00, 50),  -- Small (3.5)
+('850e8400-e29b-41d4-a716-446655440002', 65.00, 40),  -- Medium (7)
+('850e8400-e29b-41d4-a716-446655440003', 110.00, 30), -- Large (14)
+('850e8400-e29b-41d4-a716-446655440031', 180.00, 20), -- Extra Large (28)
 -- Tulip Trip prices
-('850e8400-e29b-41d4-a716-446655440004', 50.00, 45),  -- Small (3.5g)
-('850e8400-e29b-41d4-a716-446655440005', 65.00, 35),  -- Medium (7g)
-('850e8400-e29b-41d4-a716-446655440032', 110.00, 25), -- Large (14g)
-('850e8400-e29b-41d4-a716-446655440033', 180.00, 15), -- Extra Large (28g)
+('850e8400-e29b-41d4-a716-446655440004', 50.00, 45),  -- Small (3.5)
+('850e8400-e29b-41d4-a716-446655440005', 65.00, 35),  -- Medium (7)
+('850e8400-e29b-41d4-a716-446655440032', 110.00, 25), -- Large (14)
+('850e8400-e29b-41d4-a716-446655440033', 180.00, 15), -- Extra Large (28)
 -- Fleur de Haze prices
-('850e8400-e29b-41d4-a716-446655440006', 50.00, 40),  -- Small (3.5g)
-('850e8400-e29b-41d4-a716-446655440034', 65.00, 30),  -- Medium (7g)
-('850e8400-e29b-41d4-a716-446655440035', 110.00, 20), -- Large (14g)
-('850e8400-e29b-41d4-a716-446655440036', 180.00, 12), -- Extra Large (28g)
+('850e8400-e29b-41d4-a716-446655440006', 50.00, 40),  -- Small (3.5)
+('850e8400-e29b-41d4-a716-446655440034', 65.00, 30),  -- Medium (7)
+('850e8400-e29b-41d4-a716-446655440035', 110.00, 20), -- Large (14)
+('850e8400-e29b-41d4-a716-446655440036', 180.00, 12), -- Extra Large (28)
 -- Peony Dreams prices
-('850e8400-e29b-41d4-a716-446655440007', 50.00, 38),  -- Small (3.5g)
-('850e8400-e29b-41d4-a716-446655440037', 65.00, 28),  -- Medium (7g)
-('850e8400-e29b-41d4-a716-446655440038', 110.00, 18), -- Large (14g)
-('850e8400-e29b-41d4-a716-446655440039', 180.00, 10); -- Extra Large (28g)
+('850e8400-e29b-41d4-a716-446655440007', 50.00, 38),  -- Small (3.5)
+('850e8400-e29b-41d4-a716-446655440037', 65.00, 28),  -- Medium (7)
+('850e8400-e29b-41d4-a716-446655440038', 110.00, 18), -- Large (14)
+('850e8400-e29b-41d4-a716-446655440039', 180.00, 10); -- Extra Large (28)
 
 -- Insert sample orders (no tax, new pricing)
 INSERT INTO orders (id, user_id, status, subtotal, tax, delivery_fee, total, delivery_address, delivery_instructions, driver_id, created_at) VALUES
