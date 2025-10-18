@@ -94,6 +94,7 @@ CREATE TABLE orders (
     subtotal DECIMAL(10, 2) NOT NULL CHECK (subtotal >= 0),
     tax DECIMAL(10, 2) NOT NULL DEFAULT 0 CHECK (tax >= 0),
     delivery_fee DECIMAL(10, 2) NOT NULL DEFAULT 0 CHECK (delivery_fee >= 0),
+    tip DECIMAL(10, 2) NOT NULL DEFAULT 0 CHECK (tip >= 0),
     total DECIMAL(10, 2) NOT NULL CHECK (total >= 0),
     delivery_address TEXT NOT NULL,
     delivery_instructions TEXT,

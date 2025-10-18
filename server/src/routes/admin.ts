@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { requireAuth, requireRole } from '../middleware/auth';
+import { requireAuth, requireRole, authorize } from '../middleware/auth';
 import { query, queryOne } from '../db/pool';
 import { cacheService } from '../services/cache';
 import { config } from '../config';

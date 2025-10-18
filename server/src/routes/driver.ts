@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
-import { requireAuth, requireRole } from '../middleware/auth';
+import { requireAuth, requireRole, authorize } from '../middleware/auth';
 import { query, queryOne } from '../db/pool';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../types';

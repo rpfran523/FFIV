@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { api } from '../lib/api';
 import { useCartStore } from '../lib/cart-store';
 import { useAuth } from '../contexts/AuthContext';
+import TipSelector from '../components/TipSelector';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const CheckoutPage: React.FC = () => {
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
   const [cardholderName, setCardholderName] = useState('');
+  const [tipCents, setTipCents] = useState(0); // Tip in cents
   const addressInputRef = useRef<HTMLInputElement | null>(null);
   const [addressTyping, setAddressTyping] = useState('');
 
@@ -61,7 +63,8 @@ const CheckoutPage: React.FC = () => {
   }, [addressTyping]);
 
   const subtotal = getSubtotal();
-  const total = subtotal; // No delivery fee - flat pricing
+  const tipDollars = tipCents / 100;
+  const total = subtotal + tipDollars; // Subtotal + tip (no taxes, no fees)
 
   // Check Stripe configuration
   const { data: stripeConfig } = useQuery({
@@ -158,6 +161,7 @@ const CheckoutPage: React.FC = () => {
         })),
         deliveryAddress: deliveryAddress.trim(),
         deliveryInstructions: deliveryInstructions.trim() || undefined,
+        tipCents, // Include tip in cents
         paymentMethod: {
           type: 'card',
           cardNumber: cardNumber.replace(/\s/g, ''),
@@ -292,7 +296,17 @@ const CheckoutPage: React.FC = () => {
               <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
               
               <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-lg font-bold">
+                <div className="flex justify-between text-gray-700">
+                  <span>Subtotal</span>
+                  <span>{formatCurrency(subtotal)}</span>
+                </div>
+                {tipCents > 0 && (
+                  <div className="flex justify-between text-gray-700">
+                    <span>Tip</span>
+                    <span>{formatCurrency(tipDollars)}</span>
+                  </div>
+                )}
+                <div className="border-t pt-3 flex justify-between text-lg font-bold">
                   <span>Total</span>
                   <span>{formatCurrency(total)}</span>
                 </div>
@@ -332,6 +346,11 @@ const CheckoutPage: React.FC = () => {
                     rows={2}
                   />
                 </div>
+              </div>
+
+              {/* Tip Selector */}
+              <div className="mb-6">
+                <TipSelector value={tipCents} onChange={setTipCents} />
               </div>
 
               {/* Payment Information */}

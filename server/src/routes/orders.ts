@@ -23,6 +23,7 @@ const createOrderSchema = Joi.object({
   ).min(1).required(),
   deliveryAddress: Joi.string().required(),
   deliveryInstructions: Joi.string().optional(),
+  tipCents: Joi.number().integer().min(0).default(0).optional(), // Tip in cents
   paymentMethod: Joi.object({
     type: Joi.string().valid('card').required(),
     cardNumber: Joi.string().min(13).max(19).required(),
@@ -37,12 +38,13 @@ const updateOrderStatusSchema = Joi.object({
   driverId: Joi.string().uuid().optional(),
 });
 
-// Calculate order totals
-const calculateOrderTotals = (subtotal: number) => {
-  const total = subtotal; // Flat pricing - no delivery fee or tax
+// Calculate order totals (tip-only model)
+const calculateOrderTotals = (subtotal: number, tip: number = 0) => {
+  const total = subtotal + tip; // Subtotal + tip only (no taxes, no fees)
   
   return {
     subtotal: parseFloat(subtotal.toFixed(2)),
+    tip: parseFloat(tip.toFixed(2)),
     tax: 0, // No tax
     deliveryFee: 0, // No delivery fee
     total: parseFloat(total.toFixed(2)),
@@ -193,7 +195,8 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
     const { error, value } = createOrderSchema.validate(req.body);
     if (error) throw error;
     
-    const { items, deliveryAddress, deliveryInstructions, paymentMethod } = value;
+    const { items, deliveryAddress, deliveryInstructions, paymentMethod, tipCents = 0 } = value;
+    const tipDollars = tipCents / 100; // Convert cents to dollars
     
     if (req.user!.role !== 'customer') {
       throw new AppError(403, 'Only customers can create orders');
@@ -223,8 +226,8 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
         subtotal += variant.rows[0].price * item.quantity;
       }
       
-      // Calculate totals
-      const totals = calculateOrderTotals(subtotal);
+      // Calculate totals (with tip)
+      const totals = calculateOrderTotals(subtotal, tipDollars);
       
       // Create order
       const orderId = uuidv4();
@@ -236,8 +239,8 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
       console.log(`   Amount: $${totals.total}`);
       
       await client.query(
-        `INSERT INTO orders (id, user_id, status, subtotal, tax, delivery_fee, total, delivery_address, delivery_instructions)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        `INSERT INTO orders (id, user_id, status, subtotal, tax, delivery_fee, tip, total, delivery_address, delivery_instructions)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
         [
           orderId,
           req.user!.id,
@@ -245,6 +248,7 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
           totals.subtotal,
           totals.tax,
           totals.deliveryFee,
+          totals.tip,
           totals.total,
           deliveryAddress,
           deliveryInstructions
