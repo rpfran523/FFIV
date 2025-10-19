@@ -159,8 +159,9 @@ const CheckoutPage: React.FC = () => {
         );
 
         if (stripeError) {
-          // Payment failed - show error
-          toast.error(stripeError.message || 'Payment failed');
+          // Payment failed - show detailed error
+          console.error('Stripe payment error:', stripeError);
+          toast.error(stripeError.message || 'Payment failed. Please check your card details.');
           setIsPlacingOrder(false);
           return;
         }
