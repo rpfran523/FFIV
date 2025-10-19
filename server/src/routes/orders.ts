@@ -38,12 +38,14 @@ const createOrderSchema = Joi.object({
   deliveryAddress: Joi.string().required(),
   deliveryInstructions: Joi.string().optional(),
   tipCents: Joi.number().integer().min(0).default(0).optional(), // Tip in cents
+  // When Stripe is enabled, we only need { type: 'card' }.
+  // For manual payment mode (no Stripe), card fields are required (validated below at runtime).
   paymentMethod: Joi.object({
     type: Joi.string().valid('card').required(),
-    cardNumber: Joi.string().min(13).max(19).required(),
-    expiryDate: Joi.string().pattern(/^\d{2}\/\d{2}$/).required(),
-    cvv: Joi.string().min(3).max(4).required(),
-    cardholderName: Joi.string().min(2).required(),
+    cardNumber: Joi.string().min(13).max(19).optional(),
+    expiryDate: Joi.string().pattern(/^\d{2}\/\d{2}$/).optional(),
+    cvv: Joi.string().min(3).max(4).optional(),
+    cardholderName: Joi.string().min(2).optional(),
   }).required(),
 });
 
@@ -276,6 +278,17 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
         }
       } else {
         // Manual payment mode (no Stripe configured)
+        // Validate manual card fields when Stripe is not configured
+        const manualCardSchema = Joi.object({
+          cardNumber: Joi.string().min(13).max(19).required(),
+          expiryDate: Joi.string().pattern(/^\d{2}\/\d{2}$/).required(),
+          cvv: Joi.string().min(3).max(4).required(),
+          cardholderName: Joi.string().min(2).required(),
+        });
+        const { error: manualErr } = manualCardSchema.validate(paymentMethod);
+        if (manualErr) {
+          throw new AppError(400, 'Invalid payment information');
+        }
         console.log(`💳 Manual payment for order ${orderId}:`);
         console.log(`   Cardholder: ${paymentMethod.cardholderName}`);
         console.log(`   Card: ****${paymentMethod.cardNumber.slice(-4)}`);
