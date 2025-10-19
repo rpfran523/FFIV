@@ -253,7 +253,7 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
           const paymentIntent = await stripe.paymentIntents.create({
             amount: totalCents,
             currency: 'usd',
-            automatic_payment_methods: { enabled: true },
+            payment_method_types: ['card'], // Disable Link, use card only
             metadata: {
               orderId,
               userId: req.user!.id,
