@@ -487,24 +487,6 @@ const OrderDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Customer Support */}
-          <div className="bg-white rounded-lg shadow-md p-6 mt-6">
-            <h2 className="text-xl font-semibold mb-4">Need Help?</h2>
-            <div className="space-y-3">
-              <button
-                onClick={() => window.open(`mailto:support@flowerfairies.com?subject=Order Support - ${order.id.slice(0, 8)}`, '_blank')}
-                className="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300"
-              >
-                📧 Contact Support
-              </button>
-              <button
-                onClick={() => toast.success('Live chat feature coming soon!')}
-                className="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300"
-              >
-                💬 Live Chat
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

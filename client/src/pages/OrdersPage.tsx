@@ -292,7 +292,7 @@ const OrdersPage: React.FC = () => {
                       <img
                         src={item.product.imageUrl || 'https://via.placeholder.com/60'}
                         alt={item.product.name}
-                        className="w-15 h-15 object-cover rounded-md"
+                        className="w-16 h-16 object-cover rounded-md"
                       />
                       <div className="flex-1">
                         <h5 className="font-medium text-gray-900">{item.product.name}</h5>

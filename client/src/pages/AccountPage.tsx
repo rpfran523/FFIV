@@ -15,27 +15,6 @@ const AccountPage: React.FC = () => {
     phone: '',
   });
 
-  // Fetch user statistics
-  const { data: userStats } = useQuery({
-    queryKey: ['user', 'stats'],
-    queryFn: async () => {
-      if (user?.role === 'customer') {
-        try {
-          const response = await api.get('/orders');
-          const orders = response.data;
-          return {
-            totalOrders: orders.length,
-            totalSpent: orders.reduce((sum: number, order: any) => sum + parseFloat(order.total), 0),
-          };
-        } catch {
-          return { totalOrders: 0, totalSpent: 0 };
-        }
-      }
-      return null;
-    },
-    enabled: !!user,
-  });
-
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (updateData: any) => {
@@ -210,31 +189,7 @@ const AccountPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Role-specific Stats */}
-          {user?.role === 'customer' && userStats && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold mb-4">Order History</h3>
-              <div className="space-y-3">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600">{userStats.totalOrders || 0}</p>
-                  <p className="text-sm text-gray-600">Total Orders</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-green-600">
-                    {formatCurrency(userStats.totalSpent || 0)}
-                  </p>
-                  <p className="text-sm text-gray-600">Total Spent</p>
-                </div>
-              </div>
-              <Link
-                to="/orders"
-                className="block w-full mt-4 bg-primary-500 text-white text-center py-2 rounded-md hover:bg-primary-600"
-              >
-                View All Orders
-              </Link>
-            </div>
-          )}
-
+          {/* Role-specific Tools */}
           {user?.role === 'admin' && (
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-semibold mb-4">Admin Tools</h3>
