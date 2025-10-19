@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { api } from '../lib/api';
 import { useCartStore } from '../lib/cart-store';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,15 +13,14 @@ const CheckoutPage: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const { items, clearCart, getSubtotal, removeItem, updateQuantity } = useCartStore();
   const queryClient = useQueryClient();
+  const stripe = useStripe();
+  const elements = useElements();
   
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [deliveryInstructions, setDeliveryInstructions] = useState('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [cvv, setCvv] = useState('');
-  const [cardholderName, setCardholderName] = useState('');
   const [tipCents, setTipCents] = useState(0); // Tip in cents
+  const [cardError, setCardError] = useState<string | null>(null);
   const addressInputRef = useRef<HTMLInputElement | null>(null);
   const [addressTyping, setAddressTyping] = useState('');
 
@@ -134,26 +134,16 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    if (!cardNumber || !expiryDate || !cvv || !cardholderName) {
-      toast.error('Please enter complete payment information');
+    // Check if Stripe elements are ready
+    if (stripeConfig?.enabled && (!stripe || !elements)) {
+      toast.error('Payment system is loading. Please wait...');
       return;
     }
 
     setIsPlacingOrder(true);
 
     try {
-      let paymentIntentId = null;
-
-      // If Stripe is configured, create payment intent
-      if (stripeConfig?.enabled) {
-        const paymentIntent = await createPaymentIntentMutation.mutateAsync();
-        paymentIntentId = paymentIntent.clientSecret;
-        
-        toast.success('Payment authorized! Completing order...');
-      } else {
-        toast.success('Processing order with manual payment...');
-      }
-
+      // Create order first (this creates Payment Intent on backend)
       const orderData = {
         items: items.map(item => ({
           variantId: item.variantId,
@@ -161,20 +151,55 @@ const CheckoutPage: React.FC = () => {
         })),
         deliveryAddress: deliveryAddress.trim(),
         deliveryInstructions: deliveryInstructions.trim() || undefined,
-        tipCents, // Include tip in cents
-        paymentMethod: {
-          type: 'card',
-          cardNumber: cardNumber.replace(/\s/g, ''),
-          expiryDate,
-          cvv,
-          cardholderName,
-        },
-        paymentIntentId,
+        tipCents,
+        paymentMethod: { type: 'card' }, // Minimal info - Stripe handles the rest
       };
 
-      createOrderMutation.mutate(orderData);
-    } catch (error) {
-      toast.error('Payment processing failed');
+      const orderResponse = await createOrderMutation.mutateAsync(orderData);
+
+      // If Stripe is enabled and we have a payment client secret, confirm payment
+      if (stripeConfig?.enabled && orderResponse.paymentClientSecret && stripe && elements) {
+        const cardElement = elements.getElement(CardElement);
+        
+        if (!cardElement) {
+          throw new Error('Payment form not ready');
+        }
+
+        toast.success('Confirming payment...');
+
+        const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
+          orderResponse.paymentClientSecret,
+          {
+            payment_method: {
+              card: cardElement,
+            },
+          }
+        );
+
+        if (stripeError) {
+          // Payment failed - show error
+          toast.error(stripeError.message || 'Payment failed');
+          setIsPlacingOrder(false);
+          return;
+        }
+
+        if (paymentIntent && paymentIntent.status === 'succeeded') {
+          // Payment successful!
+          clearCart();
+          queryClient.invalidateQueries({ queryKey: ['orders'] });
+          toast.success('Payment successful! Order confirmed!');
+          navigate(`/orders/${orderResponse.id}`);
+        }
+      } else {
+        // Manual payment mode (no Stripe)
+        toast.success('Order placed successfully!');
+        clearCart();
+        queryClient.invalidateQueries({ queryKey: ['orders'] });
+        navigate(`/orders/${orderResponse.id}`);
+      }
+    } catch (error: any) {
+      console.error('Order/Payment error:', error);
+      toast.error(error.response?.data?.message || error.message || 'Failed to place order');
     } finally {
       setIsPlacingOrder(false);
     }
@@ -357,102 +382,62 @@ const CheckoutPage: React.FC = () => {
               <div className="space-y-4 mb-6">
                 <h3 className="text-lg font-medium text-gray-900">💳 Payment Information</h3>
                 
-                <div>
-                  <label htmlFor="cardholderName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Cardholder Name *
-                  </label>
-                  <input
-                    id="cardholderName"
-                    type="text"
-                    value={cardholderName}
-                    onChange={(e) => setCardholderName(e.target.value)}
-                    placeholder="Name on card"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    required
-                  />
-                </div>
+                {stripeConfig?.enabled ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Card Details *
+                      </label>
+                      <div className="border border-gray-300 rounded-md p-3 bg-white">
+                        <CardElement
+                          options={{
+                            style: {
+                              base: {
+                                color: '#1f2937',
+                                fontFamily: 'system-ui, sans-serif',
+                                fontSize: '16px',
+                                '::placeholder': {
+                                  color: '#9ca3af',
+                                },
+                              },
+                              invalid: {
+                                color: '#ef4444',
+                              },
+                            },
+                          }}
+                          onChange={(e) => setCardError(e.error ? e.error.message : null)}
+                        />
+                      </div>
+                      {cardError && (
+                        <p className="text-red-600 text-sm mt-2">{cardError}</p>
+                      )}
+                    </div>
 
-                <div>
-                  <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                    Card Number *
-                  </label>
-                  <input
-                    id="cardNumber"
-                    type="text"
-                    value={cardNumber}
-                    onChange={(e) => {
-                      // Format card number with spaces
-                      const value = e.target.value.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim();
-                      if (value.replace(/\s/g, '').length <= 16) {
-                        setCardNumber(value);
-                      }
-                    }}
-                    placeholder="1234 5678 9012 3456"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    maxLength={19}
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-2">
-                      Expiry Date *
-                    </label>
-                    <input
-                      id="expiryDate"
-                      type="text"
-                      value={expiryDate}
-                      onChange={(e) => {
-                        // Format MM/YY
-                        const value = e.target.value.replace(/\D/g, '');
-                        if (value.length <= 4) {
-                          const formatted = value.length >= 2 ? `${value.slice(0, 2)}/${value.slice(2)}` : value;
-                          setExpiryDate(formatted);
-                        }
-                      }}
-                      placeholder="MM/YY"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      maxLength={5}
-                      required
-                    />
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-blue-800 text-sm flex items-center">
+                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                        </svg>
+                        Your payment information is encrypted by Stripe
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p className="text-yellow-800 text-sm">
+                      ⚠️ Payment processing is currently in demo mode. Orders will be created but cards won't be charged.
+                    </p>
                   </div>
-                  <div>
-                    <label htmlFor="cvv" className="block text-sm font-medium text-gray-700 mb-2">
-                      CVV *
-                    </label>
-                    <input
-                      id="cvv"
-                      type="text"
-                      value={cvv}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '');
-                        if (value.length <= 4) {
-                          setCvv(value);
-                        }
-                      }}
-                      placeholder="123"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      maxLength={4}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-blue-800 text-sm">
-                    🔒 Your payment information is secure and encrypted
-                  </p>
-                </div>
+                )}
               </div>
 
               {/* Place Order Button */}
               <button
                 onClick={handlePlaceOrder}
-                disabled={isPlacingOrder || !deliveryAddress.trim() || items.length === 0 || !cardNumber || !expiryDate || !cvv || !cardholderName}
+                disabled={isPlacingOrder || !deliveryAddress.trim() || items.length === 0 || (stripeConfig?.enabled && !stripe)}
                 className="w-full bg-green-500 text-white py-3 px-6 rounded-md hover:bg-green-600 disabled:opacity-50 font-medium text-lg"
               >
-                {isPlacingOrder ? 'Processing Payment...' : `Pay ${formatCurrency(total)} with Card`}
+                {isPlacingOrder ? 'Processing Payment...' : `Pay ${formatCurrency(total)}`}
               </button>
 
               <p className="text-xs text-gray-500 text-center mt-3">

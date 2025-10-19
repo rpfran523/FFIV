@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { SSEProvider } from './contexts/SSEContext';
+import StripeProvider from './components/StripeProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -27,10 +28,11 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <SSEProvider>
-          <Layout>
-            <Suspense fallback={<LoadingSpinner />}>
-              <Routes>
+        <StripeProvider>
+          <SSEProvider>
+            <Layout>
+              <Suspense fallback={<LoadingSpinner />}>
+                <Routes>
                 {/* Public routes */}
                 <Route path="/" element={<AuthPage />} />
                 <Route path="/home" element={<HomePage />} />
@@ -123,6 +125,7 @@ function App() {
             </Suspense>
           </Layout>
         </SSEProvider>
+      </StripeProvider>
       </AuthProvider>
     </Router>
   );
