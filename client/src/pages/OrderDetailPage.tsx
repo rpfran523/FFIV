@@ -117,6 +117,19 @@ const OrderDetailPage: React.FC = () => {
     try {
       // Add all items from the order to cart
       order.items.forEach((item) => {
+        // Build a full Product object to satisfy cart types
+        const productForCart = {
+          id: item.product.id,
+          name: item.product.name,
+          description: item.product.description ?? '',
+          category: 'Bouquets',
+          imageUrl: item.product.image_url,
+          basePrice: item.price_at_time,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          variants: [],
+        };
+
         addItem(
           {
             id: item.variant_id,
@@ -126,12 +139,7 @@ const OrderDetailPage: React.FC = () => {
             sku: item.variant.sku,
             attributes: item.variant.attributes,
           },
-          {
-            id: item.product.id,
-            name: item.product.name,
-            imageUrl: item.product.image_url,
-            description: item.product.description,
-          },
+          productForCart,
           item.quantity
         );
       });

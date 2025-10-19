@@ -105,6 +105,18 @@ const OrdersPage: React.FC = () => {
     try {
       // Add all items from the order to cart
       order.items.forEach((item) => {
+        const productForCart = {
+          id: item.product.id,
+          name: item.product.name,
+          description: '',
+          category: 'Bouquets',
+          imageUrl: item.product.imageUrl,
+          basePrice: item.priceAtTime,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          variants: [],
+        };
+
         addItem(
           {
             id: item.variantId,
@@ -114,7 +126,7 @@ const OrdersPage: React.FC = () => {
             sku: item.variant.sku,
             attributes: item.variant.attributes,
           },
-          item.product as any, // Type assertion for cart compatibility
+          productForCart,
           item.quantity
         );
       });
