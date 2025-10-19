@@ -200,10 +200,15 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
       throw new AppError(403, 'Only customers can create orders');
     }
     
+    // Variables that need to persist outside transaction
+    let subtotal = 0;
+    let subtotalCents = 0;
+    let totals: any;
+    let totalCents: number;
+    let stripeClientSecret: string | null = null;
+    let paymentIntentId: string | null = null;
+    
     const order = await transaction(async (client) => {
-      let subtotal = 0;
-      let subtotalCents = 0;
-      
       // Validate items and calculate subtotal
       for (const item of items) {
         const variant = await client.query(
@@ -229,8 +234,8 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
       }
       
       // Calculate totals (with tip)
-      const totals = calculateOrderTotals(subtotal, tipDollars);
-      const totalCents = subtotalCents + Math.max(0, Math.round(tipDollars * 100));
+      totals = calculateOrderTotals(subtotal, tipDollars);
+      totalCents = subtotalCents + Math.max(0, Math.round(tipDollars * 100));
       if (!Number.isInteger(totalCents) || totalCents < 50) {
         throw new AppError(400, 'Invalid total. Minimum charge is $0.50.');
       }
@@ -241,8 +246,6 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
       // Create Stripe Payment Intent (required for online payment)
       const stripe = getStripe();
       const { enabled } = stripeConfig();
-      let paymentIntentId: string | null = null;
-      let stripeClientSecret: string | null = null;
       
       if (enabled && stripe) {
         try {
