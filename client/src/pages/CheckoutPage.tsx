@@ -111,18 +111,19 @@ const CheckoutPage: React.FC = () => {
       toast.error('Payment system is loading. Please wait...');
       return;
     }
-    
-    // Additional validation for card element
-    const cardElement = elements.getElement(CardElement);
-    if (!cardElement) {
-      console.error('Card element not found');
-      toast.error('Payment form not ready. Please refresh the page.');
-      return;
-    }
 
     setIsPlacingOrder(true);
 
     try {
+      // Get card element reference - do this AFTER setIsPlacingOrder to avoid race conditions
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        console.error('Card element not found');
+        toast.error('Payment form not ready. Please refresh the page.');
+        setIsPlacingOrder(false);
+        return;
+      }
+
       // Create order first (this creates Payment Intent on backend)
       const orderData = {
         items: items.map(item => ({
@@ -140,8 +141,6 @@ const CheckoutPage: React.FC = () => {
 
       // Confirm payment with Stripe if we have a client secret
       if (orderResponse.paymentClientSecret && stripe && elements) {
-        // cardElement already validated above
-
         toast.success('Confirming payment...');
         console.log('Confirming payment with client secret:', orderResponse.paymentClientSecret);
 
