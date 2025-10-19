@@ -30,7 +30,8 @@ INSERT INTO products (id, name, description, category, image_url, base_price) VA
 ('750e8400-e29b-41d4-a716-446655440001', 'Twilight Blooms', 'Twilight Blooms is a balanced bouquet that lives up to its dreamy name, offering a serene blend of calm and gentle euphoria. The lift begins mellow and cerebral, easing away tension and inviting creativity, before melting into a soothing body relaxation that never feels too heavy. The perfect companion for enhancing quiet evenings or whatever you like to get into after a long day.', 'Bouquets', '/images/twilight-blooms.jpg', 50.00),
 ('750e8400-e29b-41d4-a716-446655440002', 'Tulip Trip', 'The Tulip Trip bouquet wraps you in comfort like a blanket of petals at dusk. The effects are deeply soothing—starting with a gentle wave of calm that quiets the mind, then blossoming into a full-body relaxation that encourages rest, recovery, and blissful ease. Ideal for late evenings or unhurried nights in.', 'Bouquets', '/images/tulip-trip.jpg', 50.00),
 ('750e8400-e29b-41d4-a716-446655440003', 'Fleur de Haze', 'Fleur de Haze is a lively bouquet that blossoms with bright energy and effortless charm. It delivers a clear, creative headspace paired with a light, euphoric body buzz that keeps the mood elevated without weighing you down. Take this one with you from pilates to HomeGoods with a lavender matcha or over orange wine with good company.', 'Bouquets', '/images/fleur-de-haze.jpg', 50.00),
-('750e8400-e29b-41d4-a716-446655440004', 'Peony Dreams', 'Peony Dreams is a balanced bouquet designed to be a gentle muse for your favorite pastimes. It lifts the mind with clarity and focus, then wraps the body in an easy, comforting calm. Whether you''re curled up with a novel, immersed in a game, or simply enjoying a creative hobby, Peony Dreams enhances the moment without overwhelming it. It''s the strain that turns everyday interests into elevated rituals of relaxation.', 'Bouquets', '/images/peony-dreams.jpg', 50.00);
+('750e8400-e29b-41d4-a716-446655440004', 'Peony Dreams', 'Peony Dreams is a balanced bouquet designed to be a gentle muse for your favorite pastimes. It lifts the mind with clarity and focus, then wraps the body in an easy, comforting calm. Whether you''re curled up with a novel, immersed in a game, or simply enjoying a creative hobby, Peony Dreams enhances the moment without overwhelming it. It''s the strain that turns everyday interests into elevated rituals of relaxation.', 'Bouquets', '/images/peony-dreams.jpg', 50.00),
+('11111111-2222-3333-4444-555555555555', 'Test Purchase ($0.50)', 'A minimal price product for verifying payment flows. Safe to buy and refund.', 'Test', '/images/test-product.jpg', 0.50);
 
 -- Insert variants with standardized sizing (all 4 products)
 INSERT INTO variants (id, product_id, name, sku, attributes) VALUES
@@ -55,6 +56,10 @@ INSERT INTO variants (id, product_id, name, sku, attributes) VALUES
 ('850e8400-e29b-41d4-a716-446655440038', '750e8400-e29b-41d4-a716-446655440004', 'Large (14)', 'PEONY-LG', '{"size": "large", "weight": "14g"}'),
 ('850e8400-e29b-41d4-a716-446655440039', '750e8400-e29b-41d4-a716-446655440004', 'Extra Large (28)', 'PEONY-XL', '{"size": "extra_large", "weight": "28g"}');
 
+-- Variant for Test product
+INSERT INTO variants (id, product_id, name, sku, attributes) VALUES
+('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', '11111111-2222-3333-4444-555555555555', 'One Size', 'TEST-050', '{}');
+
 -- Insert prices for variants with standardized pricing (all 4 products)
 INSERT INTO prices (variant_id, price, stock) VALUES
 -- Twilight Blooms prices
@@ -76,7 +81,9 @@ INSERT INTO prices (variant_id, price, stock) VALUES
 ('850e8400-e29b-41d4-a716-446655440007', 50.00, 38),  -- Small (3.5)
 ('850e8400-e29b-41d4-a716-446655440037', 65.00, 28),  -- Medium (7)
 ('850e8400-e29b-41d4-a716-446655440038', 110.00, 18), -- Large (14)
-('850e8400-e29b-41d4-a716-446655440039', 180.00, 10); -- Extra Large (28)
+('850e8400-e29b-41d4-a716-446655440039', 180.00, 10), -- Extra Large (28)
+-- Price for Test product (50 cents), generous stock
+('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', 0.50, 10000);
 
 -- Insert sample orders (no tax, new pricing)
 INSERT INTO orders (id, user_id, status, subtotal, tax, delivery_fee, total, delivery_address, delivery_instructions, driver_id, created_at) VALUES
