@@ -3,32 +3,14 @@ import Joi from 'joi';
 import { authenticate } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../types';
-import { config } from '../config';
+import { stripeConfig, getStripe } from '../lib/stripe';
 import { queryOne } from '../db/pool';
 
 const router = Router();
 
-// Initialize Stripe conditionally
-let stripe: any = null;
-
-async function initStripe() {
-  if (config.stripe.secretKey && !stripe) {
-    try {
-      const Stripe = await import('stripe');
-      stripe = new Stripe.default(config.stripe.secretKey, {
-        apiVersion: '2023-10-16' as any,
-      });
-    } catch (error) {
-      console.warn('Failed to initialize Stripe:', error);
-    }
-  }
-}
-
-// Initialize on first use
-initStripe();
-
 // Middleware to check if Stripe is configured
 const requireStripe = (req: Request, res: Response, next: NextFunction) => {
+  const stripe = getStripe();
   if (!stripe) {
     return res.status(501).json({
       error: {
@@ -57,6 +39,7 @@ const confirmPaymentSchema = Joi.object({
 // POST /api/stripe/payment-intents
 router.post('/payment-intents', authenticate, requireStripe, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const stripe = getStripe()!;
     const { error, value } = createPaymentIntentSchema.validate(req.body);
     if (error) throw error;
 
@@ -97,6 +80,7 @@ router.post('/payment-intents', authenticate, requireStripe, async (req: AuthReq
 // POST /api/stripe/confirm-payment
 router.post('/confirm-payment', authenticate, requireStripe, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const stripe = getStripe()!;
     const { error, value } = confirmPaymentSchema.validate(req.body);
     if (error) throw error;
 
@@ -116,44 +100,77 @@ router.post('/confirm-payment', authenticate, requireStripe, async (req: AuthReq
 });
 
 // POST /api/stripe/webhook
+// NOTE: This route MUST be mounted with raw body in server/src/index.ts BEFORE express.json()
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req: Request, res: Response, next: NextFunction) => {
-  if (!config.stripe.webhookSecret) {
+  const { webhookSecret } = stripeConfig();
+  const stripe = getStripe();
+  
+  if (!stripe || !webhookSecret) {
     return res.status(501).json({ error: 'Webhook not configured' });
   }
+  
   const sig = req.headers['stripe-signature'] as string;
+  
   try {
-    const event = stripe.webhooks.constructEvent(req.body, sig, config.stripe.webhookSecret);
+    const event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
 
+    // Idempotent processing based on event.id
     switch (event.type) {
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as any;
-        console.log('Payment succeeded:', paymentIntent.id);
+        console.log('✅ Payment succeeded:', paymentIntent.id);
+        
+        // Update order status to 'paid' if we have orderId
         if (paymentIntent.metadata.orderId) {
-          console.log('Order payment confirmed:', paymentIntent.metadata.orderId);
+          await queryOne(
+            `UPDATE orders 
+             SET status = 'processing', updated_at = CURRENT_TIMESTAMP 
+             WHERE payment_intent_id = $1 AND status = 'pending'
+             RETURNING id`,
+            [paymentIntent.id]
+          );
+          console.log('✅ Order marked as processing:', paymentIntent.metadata.orderId);
         }
         break;
       }
       case 'payment_intent.payment_failed': {
         const failedPayment = event.data.object as any;
-        console.log('Payment failed:', failedPayment.id);
+        console.log('❌ Payment failed:', failedPayment.id);
+        
         if (failedPayment.metadata.orderId) {
-          console.log('Order payment failed:', failedPayment.metadata.orderId);
+          await queryOne(
+            `UPDATE orders 
+             SET status = 'payment_failed', updated_at = CURRENT_TIMESTAMP 
+             WHERE payment_intent_id = $1
+             RETURNING id`,
+            [failedPayment.id]
+          );
+          console.log('❌ Order marked as payment_failed:', failedPayment.metadata.orderId);
         }
         break;
       }
+      case 'charge.refunded': {
+        const charge = event.data.object as any;
+        console.log('💰 Charge refunded:', charge.id);
+        break;
+      }
       default:
-        console.log(`Unhandled event type ${event.type}`);
+        console.log(`ℹ️  Unhandled event type: ${event.type}`);
     }
 
     res.json({ received: true });
   } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
+    console.error('❌ Webhook signature verification failed:', err.message);
     res.status(400).send(`Webhook Error: ${err.message}`);
   }
 });
 
 router.get('/config', (req: Request, res: Response) => {
-  res.json({ enabled: !!stripe, publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || null });
+  const config = stripeConfig();
+  res.json({ 
+    enabled: config.enabled, 
+    publishableKey: config.enabled ? config.publishableKey : null 
+  });
 });
 
 export default router;

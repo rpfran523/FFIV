@@ -8,20 +8,7 @@ import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../types';
 import { sseHub } from '../services/sse';
 import { cacheService } from '../services/cache';
-import { config } from '../config';
-
-// Initialize Stripe
-let stripe: any = null;
-if (config.stripe.secretKey) {
-  import('stripe').then(Stripe => {
-    stripe = new Stripe.default(config.stripe.secretKey!, {
-      apiVersion: '2023-10-16' as any,
-    });
-    console.log('✅ Stripe initialized for order payments');
-  }).catch(err => {
-    console.warn('⚠️  Stripe not available:', err.message);
-  });
-}
+import { stripeConfig, getStripe } from '../lib/stripe';
 
 const FLAG_ACCEPT_ORDERS = 'feature:accept_orders';
 
@@ -38,15 +25,10 @@ const createOrderSchema = Joi.object({
   deliveryAddress: Joi.string().required(),
   deliveryInstructions: Joi.string().optional(),
   tipCents: Joi.number().integer().min(0).default(0).optional(), // Tip in cents
-  // When Stripe is enabled, we only need { type: 'card' }.
-  // For manual payment mode (no Stripe), card fields are required (validated below at runtime).
+  // Stripe Elements handles card collection; we don't need card details
   paymentMethod: Joi.object({
-    type: Joi.string().valid('card').required(),
-    cardNumber: Joi.string().min(13).max(19).optional(),
-    expiryDate: Joi.string().pattern(/^\d{2}\/\d{2}$/).optional(),
-    cvv: Joi.string().min(3).max(4).optional(),
-    cardholderName: Joi.string().min(2).optional(),
-  }).required(),
+    type: Joi.string().valid('card', 'cod').default('card'),
+  }).optional(),
 });
 
 const updateOrderStatusSchema = Joi.object({
@@ -248,11 +230,13 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
       // Create order
       const orderId = uuidv4();
       
-      // Create Stripe Payment Intent if Stripe is configured
-      let paymentIntentId = null;
-      let stripeClientSecret = null;
+      // Create Stripe Payment Intent (required for online payment)
+      const stripe = getStripe();
+      const { enabled } = stripeConfig();
+      let paymentIntentId: string | null = null;
+      let stripeClientSecret: string | null = null;
       
-      if (stripe) {
+      if (enabled && stripe) {
         try {
           const paymentIntent = await stripe.paymentIntents.create({
             amount: Math.round(totals.total * 100), // Convert to cents
@@ -273,27 +257,12 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
           console.log(`   Amount: $${totals.total} (including $${totals.tip} tip)`);
           console.log(`   Payment Intent: ${paymentIntentId}`);
         } catch (stripeError: any) {
-          console.error('❌ Stripe payment intent creation failed:', stripeError.message);
-          throw new AppError(500, 'Payment processing failed. Please try again.');
+          console.error('❌ Stripe payment intent creation failed:', stripeError);
+          throw new AppError(500, `Payment processing failed: ${stripeError.message}`);
         }
       } else {
-        // Manual payment mode (no Stripe configured)
-        // Validate manual card fields when Stripe is not configured
-        const manualCardSchema = Joi.object({
-          cardNumber: Joi.string().min(13).max(19).required(),
-          expiryDate: Joi.string().pattern(/^\d{2}\/\d{2}$/).required(),
-          cvv: Joi.string().min(3).max(4).required(),
-          cardholderName: Joi.string().min(2).required(),
-        });
-        const { error: manualErr } = manualCardSchema.validate(paymentMethod);
-        if (manualErr) {
-          throw new AppError(400, 'Invalid payment information');
-        }
-        console.log(`💳 Manual payment for order ${orderId}:`);
-        console.log(`   Cardholder: ${paymentMethod.cardholderName}`);
-        console.log(`   Card: ****${paymentMethod.cardNumber.slice(-4)}`);
-        console.log(`   Amount: $${totals.total}`);
-        console.log(`   ⚠️  Stripe not configured - order created without payment processing`);
+        // Stripe not configured - block online payment
+        throw new AppError(503, 'Online payment processing is currently unavailable. Please try again later.');
       }
       
       await client.query(

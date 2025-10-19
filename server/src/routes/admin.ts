@@ -2,20 +2,8 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth, requireRole, authorize } from '../middleware/auth';
 import { query, queryOne } from '../db/pool';
 import { cacheService } from '../services/cache';
-import { config } from '../config';
+import { getStripe } from '../lib/stripe';
 import { Analytics } from '../types';
-
-// Initialize Stripe if available
-let stripe: any = null;
-if (config.stripe.secretKey) {
-  import('stripe').then(Stripe => {
-    stripe = new Stripe.default(config.stripe.secretKey!, {
-      apiVersion: '2023-10-16' as any,
-    });
-  }).catch(err => {
-    console.warn('Failed to initialize Stripe for admin:', err);
-  });
-}
 
 const router = Router();
 
