@@ -202,6 +202,7 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
     
     const order = await transaction(async (client) => {
       let subtotal = 0;
+      let subtotalCents = 0;
       
       // Validate items and calculate subtotal
       for (const item of items) {
@@ -221,11 +222,18 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
           throw new AppError(400, `Insufficient stock for ${variant.rows[0].name}`);
         }
         
-        subtotal += variant.rows[0].price * item.quantity;
+        const unitPrice = Number(variant.rows[0].price);
+        const unitPriceCents = Math.round(unitPrice * 100);
+        subtotal += unitPrice * item.quantity;
+        subtotalCents += unitPriceCents * item.quantity;
       }
       
       // Calculate totals (with tip)
       const totals = calculateOrderTotals(subtotal, tipDollars);
+      const totalCents = subtotalCents + Math.max(0, Math.round(tipDollars * 100));
+      if (!Number.isInteger(totalCents) || totalCents < 50) {
+        throw new AppError(400, 'Invalid total. Minimum charge is $0.50.');
+      }
       
       // Create order
       const orderId = uuidv4();
@@ -239,7 +247,7 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
       if (enabled && stripe) {
         try {
           const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(totals.total * 100), // Convert to cents
+            amount: totalCents,
             currency: 'usd',
             automatic_payment_methods: { enabled: true },
             metadata: {
@@ -258,7 +266,8 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
           console.log(`   Payment Intent: ${paymentIntentId}`);
         } catch (stripeError: any) {
           console.error('❌ Stripe payment intent creation failed:', stripeError);
-          throw new AppError(500, `Payment processing failed: ${stripeError.message}`);
+          const message = stripeError?.raw?.message || stripeError?.message || 'Payment processing failed';
+          throw new AppError(400, message);
         }
       } else {
         // Stripe not configured - block online payment
