@@ -107,7 +107,16 @@ const CheckoutPage: React.FC = () => {
 
     // Check if Stripe elements are ready
     if (!stripe || !elements) {
+      console.error('Stripe not initialized:', { stripe: !!stripe, elements: !!elements });
       toast.error('Payment system is loading. Please wait...');
+      return;
+    }
+    
+    // Additional validation for card element
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      console.error('Card element not found');
+      toast.error('Payment form not ready. Please refresh the page.');
       return;
     }
 
@@ -127,16 +136,14 @@ const CheckoutPage: React.FC = () => {
       };
 
       const orderResponse = await createOrderMutation.mutateAsync(orderData);
+      console.log('Order created successfully:', orderResponse);
 
       // Confirm payment with Stripe if we have a client secret
       if (orderResponse.paymentClientSecret && stripe && elements) {
-        const cardElement = elements.getElement(CardElement);
-        
-        if (!cardElement) {
-          throw new Error('Payment form not ready');
-        }
+        // cardElement already validated above
 
         toast.success('Confirming payment...');
+        console.log('Confirming payment with client secret:', orderResponse.paymentClientSecret);
 
         const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
           orderResponse.paymentClientSecret,
@@ -176,7 +183,18 @@ const CheckoutPage: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Order/Payment error:', error);
-      toast.error(error.response?.data?.message || error.message || 'Failed to place order');
+      // Extract the most specific error message available
+      const errorMessage = 
+        error.response?.data?.error || 
+        error.response?.data?.message || 
+        error.message || 
+        'Failed to place order';
+      toast.error(errorMessage);
+      // Log additional details for debugging
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
     } finally {
       setIsPlacingOrder(false);
     }

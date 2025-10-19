@@ -111,12 +111,8 @@ router.get('/', requireAuth, requireRole('customer'), async (req: AuthRequest, r
     
     const orders = await query(sql, params);
     res.json(orders);
-  } catch (error: any) {
-    console.error('💥 Create order error:', error);
-    // Bubble up meaningful errors to client instead of generic 500
-    const message = error?.raw?.message || error?.message || 'Failed to create order';
-    const status = typeof error?.statusCode === 'number' ? error.statusCode : 400;
-    return res.status(status).json({ error: message });
+  } catch (error) {
+    next(error);
   }
 });
 
@@ -333,19 +329,26 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
     // Return order with payment info
     const response: any = {
       ...newOrder,
-      paymentRequired: !!stripe,
+      id: order, // Ensure order ID is included
+      paymentRequired: true, // Always true since we require Stripe
       paymentClientSecret: stripeClientSecret,
     };
     
-    if (stripe && stripeClientSecret) {
-      console.log(`✅ Order created with Stripe Payment Intent - requires payment confirmation`);
-    } else {
-      console.log(`✅ Order created in manual payment mode`);
+    console.log(`✅ Order ${order} created with Payment Intent ${paymentIntentId}`);
+    console.log(`   Client secret: ${stripeClientSecret ? 'present' : 'missing'}`);
+    console.log(`   Total: $${totals.total} (${totalCents} cents)`);
+    
+    if (!stripeClientSecret) {
+      console.error('❌ WARNING: No client secret in response!');
     }
     
     res.status(201).json(response);
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    console.error('💥 Create order error:', error);
+    // Bubble up meaningful errors to client instead of generic 500
+    const message = error?.raw?.message || error?.message || 'Failed to create order';
+    const status = typeof error?.statusCode === 'number' ? error.statusCode : 400;
+    return res.status(status).json({ error: message });
   }
 });
 
