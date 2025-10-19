@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState, useEffect } from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { useQuery } from '@tanstack/react-query';
@@ -9,9 +9,9 @@ interface StripeProviderProps {
   children: ReactNode;
 }
 
-let stripePromise: Promise<Stripe | null> | null = null;
-
 export const StripeProvider: React.FC<StripeProviderProps> = ({ children }) => {
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+
   // Fetch Stripe publishable key from backend
   const { data: stripeConfig, isLoading } = useQuery({
     queryKey: ['stripe', 'config'],
@@ -22,12 +22,13 @@ export const StripeProvider: React.FC<StripeProviderProps> = ({ children }) => {
     staleTime: Infinity, // Config doesn't change during session
   });
 
-  // Initialize Stripe with publishable key
-  React.useEffect(() => {
+  // Initialize Stripe with publishable key when config is loaded
+  useEffect(() => {
     if (stripeConfig?.enabled && stripeConfig?.publishableKey && !stripePromise) {
-      stripePromise = loadStripe(stripeConfig.publishableKey);
+      console.log('🔑 Initializing Stripe with publishable key');
+      setStripePromise(loadStripe(stripeConfig.publishableKey));
     }
-  }, [stripeConfig]);
+  }, [stripeConfig, stripePromise]);
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -35,7 +36,13 @@ export const StripeProvider: React.FC<StripeProviderProps> = ({ children }) => {
 
   // If Stripe is not enabled, render children without Stripe context
   if (!stripeConfig?.enabled || !stripeConfig?.publishableKey) {
+    console.log('⚠️ Stripe not enabled or missing publishable key');
     return <>{children}</>;
+  }
+
+  // Wait for Stripe to initialize
+  if (!stripePromise) {
+    return <LoadingSpinner />;
   }
 
   // Render with Stripe Elements context
