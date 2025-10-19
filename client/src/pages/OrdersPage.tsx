@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '../lib/api';
 import { useSSE } from '../contexts/SSEContext';
+import { useCartStore } from '../lib/cart-store';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 interface Order {
@@ -50,6 +51,8 @@ const OrdersPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const queryClient = useQueryClient();
   const { subscribe } = useSSE();
+  const { addItem, clearCart } = useCartStore();
+  const navigate = useNavigate();
 
   // Fetch orders
   const { data: orders, isLoading, error } = useQuery<Order[]>({
@@ -95,6 +98,31 @@ const OrdersPage: React.FC = () => {
   const handleCancelOrder = (orderId: string) => {
     if (confirm('Are you sure you want to cancel this order?')) {
       cancelOrderMutation.mutate(orderId);
+    }
+  };
+
+  const handleReorder = (order: Order) => {
+    try {
+      // Add all items from the order to cart
+      order.items.forEach((item) => {
+        addItem(
+          {
+            id: item.variantId,
+            name: item.variant.name,
+            price: item.priceAtTime,
+            stock: 999, // We don't have real-time stock here
+            sku: item.variant.sku,
+            attributes: item.variant.attributes,
+          },
+          item.product,
+          item.quantity
+        );
+      });
+      
+      toast.success('Items added to cart!');
+      navigate('/checkout');
+    } catch (error) {
+      toast.error('Failed to reorder. Please try adding items manually.');
     }
   };
 
@@ -280,28 +308,6 @@ const OrdersPage: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Order Summary */}
-                <div className="mt-6 pt-4 border-t border-gray-200">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Subtotal</span>
-                      <span>{formatCurrency(order.subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Tax</span>
-                      <span>{formatCurrency(order.tax)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Delivery Fee</span>
-                      <span>{formatCurrency(order.deliveryFee)}</span>
-                    </div>
-                    <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-2">
-                      <span>Total</span>
-                      <span>{formatCurrency(order.total)}</span>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Delivery Information */}
                 <div className="mt-6 pt-4 border-t border-gray-200">
                   <h5 className="font-medium text-gray-900 mb-2">Delivery Information</h5>
@@ -344,10 +350,10 @@ const OrdersPage: React.FC = () => {
                     
                     {order.status === 'delivered' && (
                       <button
-                        onClick={() => toast.success('Reorder feature coming soon!')}
+                        onClick={() => handleReorder(order)}
                         className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 text-sm"
                       >
-                        Reorder
+                        🔄 Reorder
                       </button>
                     )}
                   </div>
@@ -381,37 +387,6 @@ const OrdersPage: React.FC = () => {
                 Clear Filter
               </button>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Order Summary Stats */}
-      {orders && orders.length > 0 && (
-        <div className="mt-8 bg-white rounded-lg p-6 shadow-md">
-          <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{orders.length}</p>
-              <p className="text-sm text-gray-600">Total Orders</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">
-                {formatCurrency(orders.reduce((sum, order) => sum + order.total, 0))}
-              </p>
-              <p className="text-sm text-gray-600">Total Spent</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">
-                {formatCurrency(orders.reduce((sum, order) => sum + order.total, 0) / orders.length)}
-              </p>
-              <p className="text-sm text-gray-600">Average Order</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-orange-600">
-                {orders.filter(order => order.status === 'delivered').length}
-              </p>
-              <p className="text-sm text-gray-600">Delivered</p>
-            </div>
           </div>
         </div>
       )}

@@ -1,9 +1,10 @@
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { api } from '../lib/api';
 import { useSSE } from '../contexts/SSEContext';
+import { useCartStore } from '../lib/cart-store';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 interface OrderDetail {
@@ -53,6 +54,8 @@ const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { subscribe } = useSSE();
   const queryClient = useQueryClient();
+  const { addItem } = useCartStore();
+  const navigate = useNavigate();
 
   // Fetch order details
   const { data: order, isLoading, error } = useQuery<OrderDetail>({
@@ -105,6 +108,38 @@ const OrderDetailPage: React.FC = () => {
   const handleCancelOrder = () => {
     if (confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
       cancelOrderMutation.mutate();
+    }
+  };
+
+  const handleReorder = () => {
+    if (!order) return;
+    
+    try {
+      // Add all items from the order to cart
+      order.items.forEach((item) => {
+        addItem(
+          {
+            id: item.variant_id,
+            name: item.variant.name,
+            price: item.price_at_time,
+            stock: 999, // We don't have real-time stock here
+            sku: item.variant.sku,
+            attributes: item.variant.attributes,
+          },
+          {
+            id: item.product.id,
+            name: item.product.name,
+            imageUrl: item.product.image_url,
+            description: item.product.description,
+          },
+          item.quantity
+        );
+      });
+      
+      toast.success('Items added to cart!');
+      navigate('/checkout');
+    } catch (error) {
+      toast.error('Failed to reorder. Please try adding items manually.');
     }
   };
 
@@ -406,7 +441,7 @@ const OrderDetailPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4">Actions</h2>
             <div className="space-y-3">
-              {order.status === 'delivering' && (
+              {order.status === 'delivering' && order.delivery_address && (
                 <button
                   onClick={() => window.open(`https://maps.google.com/maps?q=${encodeURIComponent(order.delivery_address)}`, '_blank')}
                   className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
@@ -427,10 +462,10 @@ const OrderDetailPage: React.FC = () => {
 
               {order.status === 'delivered' && (
                 <button
-                  onClick={() => toast.success('Reorder feature coming soon!')}
+                  onClick={handleReorder}
                   className="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600"
                 >
-                  Reorder Items
+                  🔄 Reorder Items
                 </button>
               )}
 
