@@ -41,11 +41,11 @@ const HomePage: React.FC = () => {
                   to={`/product/${product.id}`}
                   className="group bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden"
                 >
-                  <div className="aspect-w-1 aspect-h-1 h-64 overflow-hidden bg-gray-200">
+                  <div className="w-full h-64 sm:h-72 overflow-hidden bg-white flex items-center justify-center">
                     <img
                       src={product.imageUrl || 'https://via.placeholder.com/400'}
                       alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
                     />
                   </div>
                   <div className="p-4">
