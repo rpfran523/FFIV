@@ -51,7 +51,7 @@ const OrdersPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const queryClient = useQueryClient();
   const { subscribe } = useSSE();
-  const { addItem, clearCart } = useCartStore();
+  const { addItem } = useCartStore();
   const navigate = useNavigate();
 
   // Fetch orders
@@ -114,7 +114,7 @@ const OrdersPage: React.FC = () => {
             sku: item.variant.sku,
             attributes: item.variant.attributes,
           },
-          item.product,
+          item.product as any, // Type assertion for cart compatibility
           item.quantity
         );
       });

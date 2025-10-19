@@ -126,8 +126,6 @@ const ProductDetailPage: React.FC = () => {
     );
   }
 
-  const stockStatus = selectedVariant ? getStockStatus(selectedVariant.stock) : null;
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Breadcrumb */}
