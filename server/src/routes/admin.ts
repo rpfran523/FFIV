@@ -23,55 +23,23 @@ const router = Router();
 router.use(requireAuth);
 router.use(authorize('admin'));
 
-// POST /api/admin/seed-test-product - Add the $0.50 test product
-router.post('/seed-test-product', async (req: Request, res: Response, next: NextFunction) => {
+// POST /api/admin/set-test-prices - Set all Small variants to $1.00 for testing
+router.post('/set-test-prices', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Check if test product already exists
-    const existing = await queryOne('SELECT id FROM products WHERE id = $1', ['11111111-2222-3333-4444-555555555555']);
-    
-    if (existing) {
-      return res.json({ message: 'Test product already exists', productId: existing.id });
-    }
-
-    // Insert test product
-    await query(`
-      INSERT INTO products (id, name, description, category, image_url, base_price, active) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-    `, [
-      '11111111-2222-3333-4444-555555555555',
-      'Test Purchase ($0.50)',
-      'A minimal price product for verifying payment flows. Safe to buy and refund.',
-      'Test',
-      '/images/test-product.jpg',
-      0.50,
-      true
-    ]);
-
-    // Insert variant
-    await query(`
-      INSERT INTO variants (id, product_id, name, sku, attributes) 
-      VALUES ($1, $2, $3, $4, $5)
-    `, [
-      'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
-      '11111111-2222-3333-4444-555555555555',
-      'One Size',
-      'TEST-050',
-      '{}'
-    ]);
-
-    // Insert price
-    await query(`
-      INSERT INTO prices (variant_id, price, stock) 
-      VALUES ($1, $2, $3)
-    `, [
-      'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
-      0.50,
-      10000
-    ]);
+    // Update all Small variant prices to $1.00
+    const result = await query(`
+      UPDATE prices 
+      SET price = 1.00 
+      WHERE variant_id IN (
+        SELECT id FROM variants 
+        WHERE name LIKE 'Small%'
+      )
+      RETURNING variant_id
+    `);
 
     res.json({ 
-      message: 'Test product created successfully',
-      productId: '11111111-2222-3333-4444-555555555555'
+      message: 'All Small variants updated to $1.00',
+      count: result.length
     });
   } catch (error) {
     next(error);
