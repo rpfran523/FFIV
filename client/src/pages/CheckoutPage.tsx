@@ -270,9 +270,10 @@ const CheckoutPage: React.FC = () => {
                 {items.map((item) => (
                   <div key={item.variantId} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
                     <img
-                      src={item.product.imageUrl || 'https://via.placeholder.com/80'}
+                      src={item.product.imageUrl || '/images/placeholder.jpg'}
                       alt={item.product.name}
                       className="w-20 h-20 object-cover rounded-md"
+                      onError={(e) => { e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%23f3f4f6" width="80" height="80"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-family="sans-serif" font-size="14"%3E🌸%3C/text%3E%3C/svg%3E'; }}
                     />
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900">{item.product.name}</h3>
