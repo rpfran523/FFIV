@@ -2,19 +2,25 @@
 
 ## 🛠️ Fixes Applied
 
-### 1. **Fixed Error Handling** (server/src/routes/orders.ts)
+### 1. **CRITICAL: Fixed Variable Scope Issue** (server/src/routes/orders.ts) 🔥
+- ✅ **Deployed:** Oct 19, 2025 - Commit 94d173f
+- ✅ Fixed "stripeClientSecret is not defined" error
+- ✅ Moved variable declarations outside transaction block
+- ✅ Now `stripeClientSecret`, `paymentIntentId`, `totals`, and `totalCents` are properly scoped
+
+### 2. **Fixed Error Handling** (server/src/routes/orders.ts)
 - ✅ Moved error handling from GET /api/orders to POST /api/orders
 - ✅ Now properly returns specific Stripe error messages instead of generic 500
 - ✅ Added detailed error logging with status codes
 
-### 2. **Enhanced Client-Side Debugging** (client/src/pages/CheckoutPage.tsx)
+### 3. **Enhanced Client-Side Debugging** (client/src/pages/CheckoutPage.tsx)
 - ✅ Added console logging for order creation response
 - ✅ Added console logging for payment client secret
 - ✅ Improved error message extraction (checks both `error` and `message` fields)
 - ✅ Added validation to ensure CardElement is ready before payment
 - ✅ Fixed duplicate cardElement retrieval
 
-### 3. **Improved Server Logging** (server/src/routes/orders.ts)
+### 4. **Improved Server Logging** (server/src/routes/orders.ts)
 - ✅ Added detailed logging for Payment Intent creation
 - ✅ Logs order ID, payment intent ID, and total amounts
 - ✅ Warns if client secret is missing from response
