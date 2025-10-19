@@ -366,43 +366,57 @@ const CheckoutPage: React.FC = () => {
                 
                 {stripeConfig?.enabled ? (
                   <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Card Details *
-                      </label>
-                      <div className="border border-gray-300 rounded-md p-3 bg-white">
-                        <CardElement
-                          options={{
-                            style: {
-                              base: {
-                                color: '#1f2937',
-                                fontFamily: 'system-ui, sans-serif',
-                                fontSize: '16px',
-                                '::placeholder': {
-                                  color: '#9ca3af',
-                                },
-                              },
-                              invalid: {
-                                color: '#ef4444',
-                              },
-                            },
-                          }}
-                          onChange={(e) => setCardError(e.error ? e.error.message : null)}
-                        />
+                    {!stripe ? (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <p className="text-gray-600 text-sm text-center">Loading payment form...</p>
                       </div>
-                      {cardError && (
-                        <p className="text-red-600 text-sm mt-2">{cardError}</p>
-                      )}
-                    </div>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Card Details *
+                          </label>
+                          <div className="border border-gray-300 rounded-md p-3 bg-white min-h-[40px]">
+                            <CardElement
+                              options={{
+                                style: {
+                                  base: {
+                                    color: '#1f2937',
+                                    fontFamily: 'system-ui, sans-serif',
+                                    fontSize: '16px',
+                                    '::placeholder': {
+                                      color: '#9ca3af',
+                                    },
+                                  },
+                                  invalid: {
+                                    color: '#ef4444',
+                                  },
+                                },
+                              }}
+                              onChange={(e) => {
+                                console.log('Card element changed:', e);
+                                setCardError(e.error ? e.error.message : null);
+                              }}
+                              onReady={() => {
+                                console.log('✅ CardElement ready for input');
+                              }}
+                            />
+                          </div>
+                          {cardError && (
+                            <p className="text-red-600 text-sm mt-2">{cardError}</p>
+                          )}
+                        </div>
 
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-blue-800 text-sm flex items-center">
-                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                        </svg>
-                        Your payment information is encrypted by Stripe
-                      </p>
-                    </div>
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <p className="text-blue-800 text-sm flex items-center">
+                            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                            </svg>
+                            Your payment information is encrypted by Stripe
+                          </p>
+                        </div>
+                      </>
+                    )}
                   </>
                 ) : (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
