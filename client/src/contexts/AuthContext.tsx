@@ -128,7 +128,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       toast.success('Account created! Please check your email for verification.');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Registration failed');
+      console.error('Registration error details:', error.response?.data || error.message);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Registration failed';
+      toast.error(errorMessage);
     },
   });
 
