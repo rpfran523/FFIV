@@ -75,25 +75,7 @@ const CheckoutPage: React.FC = () => {
     },
   });
 
-  // Create payment intent mutation
-  const createPaymentIntentMutation = useMutation({
-    mutationFn: async () => {
-      const response = await api.post('/stripe/payment-intents', {
-        amount: Math.round(total * 100), // Convert to cents
-        currency: 'usd',
-        metadata: {
-          orderId: 'temp-order-id', // Will be replaced with actual order ID
-        },
-      });
-      return response.data;
-    },
-    onSuccess: (data) => {
-      console.log('Payment intent created:', data.clientSecret);
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to initialize payment');
-    },
-  });
+  // Stripe PaymentIntents are now created server-side during order creation
 
   // Create order mutation
   const createOrderMutation = useMutation({
