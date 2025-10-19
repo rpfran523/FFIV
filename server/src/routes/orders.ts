@@ -8,6 +8,20 @@ import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../types';
 import { sseHub } from '../services/sse';
 import { cacheService } from '../services/cache';
+import { config } from '../config';
+
+// Initialize Stripe
+let stripe: any = null;
+if (config.stripe.secretKey) {
+  import('stripe').then(Stripe => {
+    stripe = new Stripe.default(config.stripe.secretKey!, {
+      apiVersion: '2023-10-16' as any,
+    });
+    console.log('✅ Stripe initialized for order payments');
+  }).catch(err => {
+    console.warn('⚠️  Stripe not available:', err.message);
+  });
+}
 
 const FLAG_ACCEPT_ORDERS = 'feature:accept_orders';
 
@@ -232,15 +246,46 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
       // Create order
       const orderId = uuidv4();
       
-      // Log payment method (in production, you'd process the payment here)
-      console.log(`💳 Payment processed for order ${orderId}:`);
-      console.log(`   Cardholder: ${paymentMethod.cardholderName}`);
-      console.log(`   Card: ****${paymentMethod.cardNumber.slice(-4)}`);
-      console.log(`   Amount: $${totals.total}`);
+      // Create Stripe Payment Intent if Stripe is configured
+      let paymentIntentId = null;
+      let stripeClientSecret = null;
+      
+      if (stripe) {
+        try {
+          const paymentIntent = await stripe.paymentIntents.create({
+            amount: Math.round(totals.total * 100), // Convert to cents
+            currency: 'usd',
+            automatic_payment_methods: { enabled: true },
+            metadata: {
+              orderId,
+              userId: req.user!.id,
+              tip: totals.tip.toString(),
+            },
+            description: `Order ${orderId.slice(0, 8)} - ${items.length} item(s)`,
+          });
+          
+          paymentIntentId = paymentIntent.id;
+          stripeClientSecret = paymentIntent.client_secret;
+          
+          console.log(`💳 Stripe Payment Intent created for order ${orderId}:`);
+          console.log(`   Amount: $${totals.total} (including $${totals.tip} tip)`);
+          console.log(`   Payment Intent: ${paymentIntentId}`);
+        } catch (stripeError: any) {
+          console.error('❌ Stripe payment intent creation failed:', stripeError.message);
+          throw new AppError(500, 'Payment processing failed. Please try again.');
+        }
+      } else {
+        // Manual payment mode (no Stripe configured)
+        console.log(`💳 Manual payment for order ${orderId}:`);
+        console.log(`   Cardholder: ${paymentMethod.cardholderName}`);
+        console.log(`   Card: ****${paymentMethod.cardNumber.slice(-4)}`);
+        console.log(`   Amount: $${totals.total}`);
+        console.log(`   ⚠️  Stripe not configured - order created without payment processing`);
+      }
       
       await client.query(
-        `INSERT INTO orders (id, user_id, status, subtotal, tax, delivery_fee, tip, total, delivery_address, delivery_instructions)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        `INSERT INTO orders (id, user_id, status, subtotal, tax, delivery_fee, tip, total, delivery_address, delivery_instructions, payment_intent_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [
           orderId,
           req.user!.id,
@@ -251,7 +296,8 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
           totals.tip,
           totals.total,
           deliveryAddress,
-          deliveryInstructions
+          deliveryInstructions,
+          paymentIntentId
         ]
       );
       
@@ -289,7 +335,20 @@ router.post('/', requireAuth, requireRole('customer'), orderLimiter, async (req:
     // Notify via SSE
     sseHub.notifyNewOrder(newOrder);
     
-    res.status(201).json(newOrder);
+    // Return order with payment info
+    const response: any = {
+      ...newOrder,
+      paymentRequired: !!stripe,
+      paymentClientSecret: stripeClientSecret,
+    };
+    
+    if (stripe && stripeClientSecret) {
+      console.log(`✅ Order created with Stripe Payment Intent - requires payment confirmation`);
+    } else {
+      console.log(`✅ Order created in manual payment mode`);
+    }
+    
+    res.status(201).json(response);
   } catch (error) {
     next(error);
   }
