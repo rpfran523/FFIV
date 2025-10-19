@@ -24,5 +24,11 @@ services:
         value: aB3cD5eF7gH9jK2lM4nP6qR8sT0vW2xY4zA6bC8dE0fG2hJ
       - key: TOGETHER_API_KEY
         sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
       - key: PORT
         value: 10000
