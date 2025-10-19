@@ -19,12 +19,8 @@ if (config.stripe.secretKey) {
 
 const router = Router();
 
-// All routes require admin authentication
-router.use(requireAuth);
-router.use(authorize('admin'));
-
 // POST /api/admin/set-test-prices - Set all Small variants to $1.00 for testing
-router.post('/set-test-prices', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/set-test-prices', requireAuth, requireRole('admin'), async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Update all Small variant prices to $1.00
     const result = await query(`
