@@ -111,8 +111,12 @@ router.get('/', requireAuth, requireRole('customer'), async (req: AuthRequest, r
     
     const orders = await query(sql, params);
     res.json(orders);
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    console.error('💥 Create order error:', error);
+    // Bubble up meaningful errors to client instead of generic 500
+    const message = error?.raw?.message || error?.message || 'Failed to create order';
+    const status = typeof error?.statusCode === 'number' ? error.statusCode : 400;
+    return res.status(status).json({ error: message });
   }
 });
 
