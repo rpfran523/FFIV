@@ -35,7 +35,25 @@ import { cacheService } from './services/cache';
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// Behind a proxy on Render/other PaaS
+// Enables correct IP detection for rate-limit and cookie/SameSite handling
+app.set('trust proxy', 1);
+
 // CORS & security
+// Allowlist of frontends
+const allowedOrigins = (() => {
+  const defaults = [
+    'http://localhost:5173',
+    'https://flowerfairieschi.shop',
+    'https://www.flowerfairieschi.shop',
+    'https://ff-chi.onrender.com',
+  ];
+  if (process.env.CORS_ORIGIN) {
+    return process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
+  }
+  return defaults;
+})();
+
 app.use(helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
     useDefaults: true,
@@ -47,7 +65,8 @@ app.use(helmet({
       "object-src": ["'none'"],
       "script-src": ["'self'", "https:"],
       "style-src": ["'self'", "'unsafe-inline'", "https:"],
-      "connect-src": ["'self'", process.env.FRONTEND_URL || 'https://ff-chi.onrender.com', "https:"]
+      // Allow API connections from our known frontends
+      "connect-src": ["'self'", ...allowedOrigins, "https:"]
     }
   } : false,
   crossOriginEmbedderPolicy: false,
@@ -57,18 +76,20 @@ app.use(helmet({
 const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false });
 app.use('/api', apiLimiter);
 
-const allowedOrigins = ['http://localhost:5173'];
-if (process.env.NODE_ENV === 'production') {
-  allowedOrigins.push(process.env.FRONTEND_URL || 'https://ff-chi.onrender.com');
-}
-const FRONTEND_URL = process.env.FRONTEND_URL || allowedOrigins[0];
-app.use(cors({
-  origin: FRONTEND_URL,
+// CORS allowlist (supports multiple origins)
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // Allow non-browser clients like curl
+    return allowedOrigins.includes(origin)
+      ? callback(null, true)
+      : callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization'],
-}));
-app.options('*', cors({ origin: FRONTEND_URL, credentials: true }));
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Mount Stripe webhook BEFORE json parser to preserve raw body
 app.use('/api/stripe', (req, res, next) => next(), stripeRoutes);
