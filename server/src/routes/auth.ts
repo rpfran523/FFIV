@@ -6,6 +6,7 @@ import { authenticate } from '../middleware/auth';
 import { authLimiter } from '../middleware/rateLimiter';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../types';
+import { queryOne } from '../db/pool';
 
 const router = Router();
 
@@ -55,18 +56,25 @@ const setAuthCookies = (res: Response, tokens: { accessToken: string; refreshTok
 // POST /api/auth/register
 router.post('/register', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    console.log('📝 Registration attempt:', { email: req.body.email, name: req.body.name });
+    
     const { error, value } = registerSchema.validate(req.body);
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Validation error:', error.details);
+      throw error;
+    }
 
     const { email, password, name, phone } = value;
 
     // Check if user exists
     const existingUser = await authService.findUserByEmail(email);
     if (existingUser) {
+      console.log('⚠️  User already exists:', email);
       throw new AppError(400, 'User already exists');
     }
 
     // Create user
+    console.log('✅ Creating new user:', { email, name, phone });
     const user = await authService.createUser(email, password, name, phone);
     const tokens = authService.generateTokenPair(user);
 
@@ -74,11 +82,13 @@ router.post('/register', authLimiter, async (req: Request, res: Response, next: 
     const isMobile = req.query.mobile === '1';
     setAuthCookies(res, tokens, isMobile);
 
+    console.log('✅ Registration successful:', email);
     res.status(201).json({
       user: authService.sanitizeUser(user),
       tokens, // Always return tokens for frontend
     });
   } catch (error) {
+    console.error('💥 Registration error:', error);
     next(error);
   }
 });
