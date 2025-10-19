@@ -66,21 +66,13 @@ const CheckoutPage: React.FC = () => {
   const tipDollars = tipCents / 100;
   const total = subtotal + tipDollars; // Subtotal + tip (no taxes, no fees)
 
-  // Create order mutation
+  // Create order mutation - NO callbacks to prevent unmounting CardElement
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
       const response = await api.post('/orders', orderData);
       return response.data;
     },
-    onSuccess: (order) => {
-      clearCart();
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      toast.success('Order placed successfully!');
-      navigate(`/orders/${order.id}`);
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to place order');
-    },
+    // DO NOT add onSuccess/onError - they cause re-renders that unmount CardElement
   });
 
   const handlePlaceOrder = async () => {
@@ -144,11 +136,18 @@ const CheckoutPage: React.FC = () => {
         toast.success('Confirming payment...');
         console.log('Confirming payment with client secret:', orderResponse.paymentClientSecret);
 
+        // Re-verify cardElement is still mounted before using it
+        const cardElementForPayment = elements.getElement(CardElement);
+        if (!cardElementForPayment) {
+          console.error('CardElement unmounted before payment confirmation');
+          throw new Error('Payment form was unmounted. Please try again.');
+        }
+
         const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
           orderResponse.paymentClientSecret,
           {
             payment_method: {
-              card: cardElement,
+              card: cardElementForPayment,
               billing_details: {
                 email: user?.email,
               },
