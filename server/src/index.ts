@@ -66,7 +66,9 @@ app.use(helmet({
       "script-src": ["'self'", "https:"],
       "style-src": ["'self'", "'unsafe-inline'", "https:"],
       // Allow API connections from our known frontends
-      "connect-src": ["'self'", ...allowedOrigins, "https:"]
+      "connect-src": ["'self'", ...allowedOrigins, "https:"],
+      // Allow Stripe Elements iframes on iOS Safari
+      "frame-src": ["'self'", "https://js.stripe.com", "https://hooks.stripe.com", "https:"],
     }
   } : false,
   crossOriginEmbedderPolicy: false,
