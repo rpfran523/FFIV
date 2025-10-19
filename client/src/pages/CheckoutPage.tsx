@@ -385,6 +385,7 @@ const CheckoutPage: React.FC = () => {
                                 color: '#ef4444',
                               },
                             },
+                            disableLink: true, // Disable Stripe Link to prevent redirects
                           }}
                           onChange={(e) => {
                             setCardError(e.error ? e.error.message : null);
