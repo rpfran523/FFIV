@@ -4,6 +4,8 @@ import { query, queryOne } from '../db/pool';
 import { cacheService } from '../services/cache';
 import { getStripe } from '../lib/stripe';
 import { Analytics } from '../types';
+import { AppError } from '../middleware/errorHandler';
+import * as config from '../config';
 
 const router = Router();
 
@@ -309,6 +311,7 @@ router.get('/products/inventory', async (req: Request, res: Response, next: Next
 // GET /api/admin/stripe/revenue
 router.get('/stripe/revenue', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const stripe = getStripe();
     if (!stripe) {
       return res.json({
         enabled: false,
@@ -435,6 +438,37 @@ router.patch('/products/:id/status', async (req: Request, res: Response, next: N
     res.json({
       message: 'Product status updated successfully',
       product: updatedProduct,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PATCH /api/admin/users/:id/password
+router.patch('/users/:id/password', requireAuth, requireRole('admin'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+
+    if (!password || password.length < 6) {
+      throw new AppError(400, 'Password must be at least 6 characters');
+    }
+
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const updatedUser = await queryOne(
+      'UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, email, name, role',
+      [hashedPassword, id]
+    );
+
+    if (!updatedUser) {
+      throw new AppError(404, 'User not found');
+    }
+
+    res.json({
+      message: 'User password updated successfully',
+      user: updatedUser,
     });
   } catch (error) {
     next(error);
