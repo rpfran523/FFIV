@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { api, setTokens, clearTokens } from '../lib/api';
 import { useCartStore } from '../lib/cart-store';
+import { useSessionTimeout } from '../hooks/useSessionTimeout';
+import { isTokenExpired } from '../lib/tokenUtils';
 import type { User, LoginCredentials, RegisterData, AuthTokens } from '../types';
 
 interface AuthContextType {
@@ -29,6 +31,9 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+// 4 hour session timeout (configurable via env)
+const SESSION_TIMEOUT_MS = parseInt(import.meta.env.VITE_SESSION_TIMEOUT_MS || '14400000'); // 4 hours
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const queryClient = useQueryClient();
@@ -49,19 +54,92 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     enabled: isInitialized,
   });
 
+  // Logout mutation
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      try {
+        await api.post('/auth/logout');
+      } catch (error) {
+        // Ignore server errors during logout
+        console.warn('Logout API call failed, continuing with local cleanup');
+      }
+    },
+    onSettled: () => {
+      // Always clear local state regardless of server response
+      clearTokens();
+      queryClient.setQueryData(['auth', 'user'], null);
+      queryClient.clear();
+      
+      // Clear cart and user info
+      clearCart();
+      setCurrentUser('anonymous');
+      
+      // Force page reload to ensure clean state
+      window.location.href = '/auth';
+    },
+  });
+
+  const logout = useCallback(async () => {
+    await logoutMutation.mutateAsync();
+  }, [logoutMutation]);
+
+  // Session timeout handler
+  const handleSessionTimeout = useCallback(() => {
+    toast.error('Your session has expired due to inactivity. Please log in again.');
+    logout();
+  }, [logout]);
+
+  // Enable session timeout only when user is authenticated
+  useSessionTimeout({
+    timeoutMs: SESSION_TIMEOUT_MS,
+    onTimeout: handleSessionTimeout,
+    enabled: !!user,
+  });
+
+  // Periodic token expiry check (every minute)
+  useEffect(() => {
+    if (!user) return;
+
+    const checkTokenExpiry = () => {
+      const token = localStorage.getItem('ff_token');
+      if (token && isTokenExpired(token)) {
+        console.log('⏰ Access token has expired');
+        toast.error('Your session has expired. Please log in again.');
+        logout();
+      }
+    };
+
+    // Check immediately
+    checkTokenExpiry();
+
+    // Then check every minute
+    const interval = setInterval(checkTokenExpiry, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [user, logout]);
+
   // Initialize auth state
   useEffect(() => {
     const initAuth = async () => {
       const refreshToken = localStorage.getItem('refreshToken');
       if (refreshToken) {
-        try {
-          const { data } = await api.post<AuthTokens>('/auth/refresh', { refreshToken });
-          setTokens(data);
-        } catch (error) {
+        // Check if refresh token is expired before attempting refresh
+        if (isTokenExpired(refreshToken)) {
+          console.log('⏰ Refresh token expired on init');
           clearTokens();
           clearCart();
           setCurrentUser('anonymous');
-          localStorage.removeItem('current-user');
+        } else {
+          try {
+            const { data } = await api.post<AuthTokens>('/auth/refresh', { refreshToken });
+            setTokens(data);
+          } catch (error) {
+            console.warn('Token refresh failed on init');
+            clearTokens();
+            clearCart();
+            setCurrentUser('anonymous');
+            localStorage.removeItem('current-user');
+          }
         }
       }
       setIsInitialized(true);
@@ -134,33 +212,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     },
   });
 
-  // Logout mutation
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      try {
-        await api.post('/auth/logout');
-      } catch (error) {
-        // Ignore server errors during logout
-        console.warn('Logout API call failed, continuing with local cleanup');
-      }
-    },
-    onSettled: () => {
-      // Always clear local state regardless of server response
-      clearTokens();
-      queryClient.setQueryData(['auth', 'user'], null);
-      queryClient.clear();
-      
-      // Clear cart and user info
-      clearCart();
-      setCurrentUser('anonymous');
-      localStorage.removeItem('current-user');
-      localStorage.removeItem('refreshToken');
-      
-      // Force page reload to ensure clean state
-      window.location.href = '/';
-    },
-  });
-
   const login = useCallback(async (credentials: LoginCredentials) => {
     await loginMutation.mutateAsync(credentials);
   }, [loginMutation]);
@@ -168,10 +219,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = useCallback(async (data: RegisterData) => {
     await registerMutation.mutateAsync(data);
   }, [registerMutation]);
-
-  const logout = useCallback(async () => {
-    await logoutMutation.mutateAsync();
-  }, [logoutMutation]);
 
   const value: AuthContextType = {
     user: user || null,
