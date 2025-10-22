@@ -34,7 +34,7 @@ function App() {
               <Suspense fallback={<LoadingSpinner />}>
                 <Routes>
                 {/* Public routes */}
-                <Route path="/" element={<AuthPage />} />
+                <Route path="/" element={<HomePage />} />
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/products" element={<ProductsPage />} />
                 <Route path="/product/:id" element={<ProductDetailPage />} />
