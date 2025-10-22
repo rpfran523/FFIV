@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { SSEProvider } from './contexts/SSEContext';
 import StripeProvider from './components/StripeProvider';
@@ -33,19 +33,14 @@ function App() {
             <Layout>
               <Suspense fallback={<LoadingSpinner />}>
                 <Routes>
+                {/* Root path redirects to auth */}
+                <Route path="/" element={<Navigate to="/auth" replace />} />
+                
                 {/* Public routes - only auth and email verification */}
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/verify-email" element={<EmailVerificationPage />} />
 
                 {/* Protected routes - require authentication */}
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute allowedRoles={['customer', 'admin', 'driver']}>
-                      <HomePage />
-                    </ProtectedRoute>
-                  }
-                />
                 <Route
                   path="/home"
                   element={
