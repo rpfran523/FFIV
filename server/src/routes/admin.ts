@@ -5,7 +5,7 @@ import { cacheService } from '../services/cache';
 import { getStripe } from '../lib/stripe';
 import { Analytics } from '../types';
 import { AppError } from '../middleware/errorHandler';
-import * as config from '../config';
+import { config } from '../config';
 
 const router = Router();
 
@@ -158,7 +158,9 @@ router.get('/analytics', async (req: Request, res: Response, next: NextFunction)
     };
     
     // Cache for 5 minutes
-    await cacheService.set(cacheKey, dashboardData, config.cache.ttl.analytics);
+    if (config?.cache?.ttl?.analytics) {
+      await cacheService.set(cacheKey, dashboardData, config.cache.ttl.analytics);
+    }
     
     res.json(dashboardData);
   } catch (error) {
