@@ -234,13 +234,13 @@ router.get('/orders', async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
-// GET /api/admin/users
+// GET /api/admin/users - Now includes phone numbers
 router.get('/users', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { role, search, limit = '50', offset = '0' } = req.query;
     
     let sql = `
-      SELECT u.id, u.email, u.name, u.role, u.created_at,
+      SELECT u.id, u.email, u.name, u.phone, u.role, u.created_at,
         COUNT(DISTINCT o.id) as total_orders,
         COALESCE(SUM(o.total), 0) as total_spent,
         MAX(o.created_at) as last_order_date
@@ -541,19 +541,17 @@ router.post('/update-demo-passwords', requireAuth, requireRole('admin'), async (
     const newPassword = 'FullMoon1!!!';
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     
-    // List of demo users to update
+    // ONLY update the 5 specific demo accounts
     const demoEmails = [
       'admin@flowerfairies.com',
-      'customer@flowerfairies.com',
-      'driver@flowerfairies.com',
-      'john@example.com',
-      'jane@example.com',
-      'bob@driver.com',
-      'alice@driver.com'
+      'customer1@flowerfairies.com',
+      'customer2@flowerfairies.com',
+      'driver1@flowerfairies.com',
+      'driver2@flowerfairies.com'
     ];
     
-    // Update passwords for specific demo users
-    const result1 = await query(
+    // Update passwords ONLY for the 5 demo accounts
+    const result = await query(
       `UPDATE users 
        SET password = $1, updated_at = CURRENT_TIMESTAMP 
        WHERE email = ANY($2::text[])
@@ -561,22 +559,10 @@ router.post('/update-demo-passwords', requireAuth, requireRole('admin'), async (
       [hashedPassword, demoEmails]
     );
     
-    // Also update any other test users
-    const result2 = await query(
-      `UPDATE users 
-       SET password = $1, updated_at = CURRENT_TIMESTAMP 
-       WHERE (email LIKE '%@example.com' 
-          OR email LIKE '%@driver.com' 
-          OR email LIKE '%test%')
-          AND email NOT IN (SELECT unnest($2::text[]))
-       RETURNING email`,
-      [hashedPassword, demoEmails]
-    );
-    
     res.json({
       message: 'Demo passwords updated successfully',
-      updatedUsers: [...result1.map(r => r.email), ...result2.map(r => r.email)],
-      totalUpdated: result1.length + result2.length,
+      updatedUsers: result.map(r => r.email),
+      totalUpdated: result.length,
       newPassword: 'FullMoon1!!!'
     });
   } catch (error) {
