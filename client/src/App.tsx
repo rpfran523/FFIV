@@ -33,13 +33,43 @@ function App() {
             <Layout>
               <Suspense fallback={<LoadingSpinner />}>
                 <Routes>
-                {/* Public routes */}
-                <Route path="/" element={<HomePage />} />
-                <Route path="/home" element={<HomePage />} />
-                <Route path="/products" element={<ProductsPage />} />
-                <Route path="/product/:id" element={<ProductDetailPage />} />
+                {/* Public routes - only auth and email verification */}
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/verify-email" element={<EmailVerificationPage />} />
+
+                {/* Protected routes - require authentication */}
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute allowedRoles={['customer', 'admin', 'driver']}>
+                      <HomePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/home"
+                  element={
+                    <ProtectedRoute allowedRoles={['customer', 'admin', 'driver']}>
+                      <HomePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/products"
+                  element={
+                    <ProtectedRoute allowedRoles={['customer', 'admin', 'driver']}>
+                      <ProductsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/product/:id"
+                  element={
+                    <ProtectedRoute allowedRoles={['customer', 'admin', 'driver']}>
+                      <ProductDetailPage />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Customer routes */}
                 <Route
