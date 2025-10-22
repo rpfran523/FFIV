@@ -534,4 +534,54 @@ router.post('/cache/clear', async (req: Request, res: Response, next: NextFuncti
   }
 });
 
+// POST /api/admin/update-demo-passwords
+router.post('/update-demo-passwords', requireAuth, requireRole('admin'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const newPassword = 'FullMoon1!!!';
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    // List of demo users to update
+    const demoEmails = [
+      'admin@flowerfairies.com',
+      'customer@flowerfairies.com',
+      'driver@flowerfairies.com',
+      'john@example.com',
+      'jane@example.com',
+      'bob@driver.com',
+      'alice@driver.com'
+    ];
+    
+    // Update passwords for specific demo users
+    const result1 = await query(
+      `UPDATE users 
+       SET password = $1, updated_at = CURRENT_TIMESTAMP 
+       WHERE email = ANY($2::text[])
+       RETURNING email`,
+      [hashedPassword, demoEmails]
+    );
+    
+    // Also update any other test users
+    const result2 = await query(
+      `UPDATE users 
+       SET password = $1, updated_at = CURRENT_TIMESTAMP 
+       WHERE (email LIKE '%@example.com' 
+          OR email LIKE '%@driver.com' 
+          OR email LIKE '%test%')
+          AND email NOT IN (SELECT unnest($2::text[]))
+       RETURNING email`,
+      [hashedPassword, demoEmails]
+    );
+    
+    res.json({
+      message: 'Demo passwords updated successfully',
+      updatedUsers: [...result1.map(r => r.email), ...result2.map(r => r.email)],
+      totalUpdated: result1.length + result2.length,
+      newPassword: 'FullMoon1!!!'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
