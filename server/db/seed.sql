@@ -11,14 +11,14 @@ DELETE FROM drivers;
 DELETE FROM users;
 
 -- Insert demo users
--- Password for all users is hashed version of their username + '123' (e.g., admin123, driver123, customer123)
+-- Password for all demo users is: FullMoon1!!!
 -- These are bcrypt hashes with salt rounds of 10
 INSERT INTO users (id, email, password, name, phone, role, email_verified) VALUES
-('550e8400-e29b-41d4-a716-446655440001', 'admin@flowerfairies.com', '$2a$10$K8Y0xVD0Y.XmzBryMBhDiOZCAF8xEoF.eZLYHPnP8TtRz5KsJu.Ky', 'Admin User', '+1-555-0001', 'admin', true),
-('550e8400-e29b-41d4-a716-446655440002', 'driver1@flowerfairies.com', '$2a$10$v/7NfKx4iruzPO5EYqCpDOSAcgN7ZoiABH/h6aJbpF8HbNcIK8sLu', 'Driver One', '+1-555-0002', 'driver', true),
-('550e8400-e29b-41d4-a716-446655440003', 'driver2@flowerfairies.com', '$2a$10$LJJFjN5j7I0GQvJLnCqQ1eZB2sX/dXKoVDXthNI0jFz6Q5zKqKVEa', 'Driver Two', '+1-555-0003', 'driver', true),
-('550e8400-e29b-41d4-a716-446655440004', 'customer1@flowerfairies.com', '$2a$10$TzW8U0OhNx9S5k0a5JMj.OdJBLASO5QrG6VV9HXCjqMKqfhAwJ7D6', 'Customer One', '+1-555-0004', 'customer', true),
-('550e8400-e29b-41d4-a716-446655440005', 'customer2@flowerfairies.com', '$2a$10$gihE7HJQQrKH5DdqKX5fD.3SbeQJd5U.HcgIdpomQJnZxKg3HBkR.', 'Customer Two', '+1-555-0005', 'customer', true);
+('550e8400-e29b-41d4-a716-446655440001', 'admin@flowerfairies.com', '$2a$10$xKx5m5H7vu1TgP5V3BHJq.wSTFX3fHn3YnJBQoRqVUOKJLfC2hYmS', 'Admin User', '+1-555-0001', 'admin', true),
+('550e8400-e29b-41d4-a716-446655440002', 'driver1@flowerfairies.com', '$2a$10$xKx5m5H7vu1TgP5V3BHJq.wSTFX3fHn3YnJBQoRqVUOKJLfC2hYmS', 'Driver One', '+1-555-0002', 'driver', true),
+('550e8400-e29b-41d4-a716-446655440003', 'driver2@flowerfairies.com', '$2a$10$xKx5m5H7vu1TgP5V3BHJq.wSTFX3fHn3YnJBQoRqVUOKJLfC2hYmS', 'Driver Two', '+1-555-0003', 'driver', true),
+('550e8400-e29b-41d4-a716-446655440004', 'customer1@flowerfairies.com', '$2a$10$xKx5m5H7vu1TgP5V3BHJq.wSTFX3fHn3YnJBQoRqVUOKJLfC2hYmS', 'Customer One', '+1-555-0004', 'customer', true),
+('550e8400-e29b-41d4-a716-446655440005', 'customer2@flowerfairies.com', '$2a$10$xKx5m5H7vu1TgP5V3BHJq.wSTFX3fHn3YnJBQoRqVUOKJLfC2hYmS', 'Customer Two', '+1-555-0005', 'customer', true);
 
 -- Insert drivers
 INSERT INTO drivers (id, user_id, vehicle_type, license_plate, available) VALUES
@@ -63,39 +63,39 @@ INSERT INTO variants (id, product_id, name, sku, attributes) VALUES
 -- Insert prices for variants with standardized pricing (all 4 products)
 INSERT INTO prices (variant_id, price, stock) VALUES
 -- Twilight Blooms prices
-('850e8400-e29b-41d4-a716-446655440001', 50.00, 50),  -- Small (3.5)
-('850e8400-e29b-41d4-a716-446655440002', 65.00, 40),  -- Medium (7)
-('850e8400-e29b-41d4-a716-446655440003', 110.00, 30), -- Large (14)
-('850e8400-e29b-41d4-a716-446655440031', 180.00, 20), -- Extra Large (28)
+('850e8400-e29b-41d4-a716-446655440001', 55.00, 50),  -- Small (3.5)
+('850e8400-e29b-41d4-a716-446655440002', 80.00, 40),  -- Medium (7)
+('850e8400-e29b-41d4-a716-446655440003', 130.00, 30), -- Large (14)
+('850e8400-e29b-41d4-a716-446655440031', 190.00, 20), -- Extra Large (28)
 -- Tulip Trip prices
-('850e8400-e29b-41d4-a716-446655440004', 50.00, 45),  -- Small (3.5)
-('850e8400-e29b-41d4-a716-446655440005', 65.00, 35),  -- Medium (7)
-('850e8400-e29b-41d4-a716-446655440032', 110.00, 25), -- Large (14)
-('850e8400-e29b-41d4-a716-446655440033', 180.00, 15), -- Extra Large (28)
+('850e8400-e29b-41d4-a716-446655440004', 55.00, 45),  -- Small (3.5)
+('850e8400-e29b-41d4-a716-446655440005', 80.00, 35),  -- Medium (7)
+('850e8400-e29b-41d4-a716-446655440032', 130.00, 25), -- Large (14)
+('850e8400-e29b-41d4-a716-446655440033', 190.00, 15), -- Extra Large (28)
 -- Fleur de Haze prices
-('850e8400-e29b-41d4-a716-446655440006', 50.00, 40),  -- Small (3.5)
-('850e8400-e29b-41d4-a716-446655440034', 65.00, 30),  -- Medium (7)
-('850e8400-e29b-41d4-a716-446655440035', 110.00, 20), -- Large (14)
-('850e8400-e29b-41d4-a716-446655440036', 180.00, 12), -- Extra Large (28)
+('850e8400-e29b-41d4-a716-446655440006', 55.00, 40),  -- Small (3.5)
+('850e8400-e29b-41d4-a716-446655440034', 80.00, 30),  -- Medium (7)
+('850e8400-e29b-41d4-a716-446655440035', 130.00, 20), -- Large (14)
+('850e8400-e29b-41d4-a716-446655440036', 190.00, 12), -- Extra Large (28)
 -- Peony Dreams prices
-('850e8400-e29b-41d4-a716-446655440007', 50.00, 38),  -- Small (3.5)
-('850e8400-e29b-41d4-a716-446655440037', 65.00, 28),  -- Medium (7)
-('850e8400-e29b-41d4-a716-446655440038', 110.00, 18), -- Large (14)
-('850e8400-e29b-41d4-a716-446655440039', 180.00, 10), -- Extra Large (28)
+('850e8400-e29b-41d4-a716-446655440007', 55.00, 38),  -- Small (3.5)
+('850e8400-e29b-41d4-a716-446655440037', 80.00, 28),  -- Medium (7)
+('850e8400-e29b-41d4-a716-446655440038', 130.00, 18), -- Large (14)
+('850e8400-e29b-41d4-a716-446655440039', 190.00, 10), -- Extra Large (28)
 -- Price for Test product (50 cents), generous stock
 ('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', 0.50, 10000);
 
 -- Insert sample orders (no tax, new pricing)
 INSERT INTO orders (id, user_id, status, subtotal, tax, delivery_fee, total, delivery_address, delivery_instructions, driver_id, created_at) VALUES
-('950e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440004', 'delivered', 65.00, 0.00, 8.00, 73.00, '123 Main St, Fairyland, FL 12345', 'Leave at front door', '650e8400-e29b-41d4-a716-446655440001', NOW() - INTERVAL '2 days'),
-('950e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440004', 'delivering', 50.00, 0.00, 8.00, 58.00, '123 Main St, Fairyland, FL 12345', 'Ring doorbell', '650e8400-e29b-41d4-a716-446655440002', NOW() - INTERVAL '1 hour');
+('950e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440004', 'delivered', 80.00, 0.00, 8.00, 88.00, '123 Main St, Fairyland, FL 12345', 'Leave at front door', '650e8400-e29b-41d4-a716-446655440001', NOW() - INTERVAL '2 days'),
+('950e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440004', 'delivering', 55.00, 0.00, 8.00, 63.00, '123 Main St, Fairyland, FL 12345', 'Ring doorbell', '650e8400-e29b-41d4-a716-446655440002', NOW() - INTERVAL '1 hour');
 
 -- Insert order items
 INSERT INTO order_items (order_id, variant_id, quantity, price_at_time, total) VALUES
 -- Order 1 items (Medium Twilight Blooms)
-('950e8400-e29b-41d4-a716-446655440001', '850e8400-e29b-41d4-a716-446655440002', 1, 65.00, 65.00),
+('950e8400-e29b-41d4-a716-446655440001', '850e8400-e29b-41d4-a716-446655440002', 1, 80.00, 80.00),
 -- Order 2 items (Small Fleur de Haze)
-('950e8400-e29b-41d4-a716-446655440002', '850e8400-e29b-41d4-a716-446655440006', 1, 50.00, 50.00);
+('950e8400-e29b-41d4-a716-446655440002', '850e8400-e29b-41d4-a716-446655440006', 1, 55.00, 55.00);
 
 -- Insert driver locations for active drivers
 INSERT INTO driver_locations (driver_id, lat, lng) VALUES
