@@ -6,7 +6,8 @@ import { authenticate } from '../middleware/auth';
 import { authLimiter } from '../middleware/rateLimiter';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../types';
-import { queryOne } from '../db/pool';
+import { queryOne, query } from '../db/pool';
+import bcrypt from 'bcryptjs';
 
 const router = Router();
 
@@ -245,6 +246,54 @@ router.post('/resend-verification', async (req: Request, res: Response, next: Ne
       message: 'Verification email sent',
     });
   } catch (error) {
+    next(error);
+  }
+});
+
+// TEMPORARY ENDPOINT: GET /api/auth/fix-demo-passwords
+// This endpoint does not require authentication
+// IT WILL BE REMOVED AFTER FIXING THE PASSWORDS
+router.get('/fix-demo-passwords', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    console.log('🔧 Fixing demo passwords...');
+    
+    // Generate hash for "admin123"
+    const adminPassword = await bcrypt.hash('admin123', 10);
+    
+    // Update all demo accounts to use "admin123"
+    const demoEmails = [
+      'admin@flowerfairies.com',
+      'customer1@flowerfairies.com',
+      'customer2@flowerfairies.com',
+      'driver1@flowerfairies.com',
+      'driver2@flowerfairies.com'
+    ];
+    
+    const result = await query(
+      `UPDATE users 
+       SET password = $1, updated_at = CURRENT_TIMESTAMP 
+       WHERE email = ANY($2::text[])
+       RETURNING email`,
+      [adminPassword, demoEmails]
+    );
+    
+    console.log('✅ Updated passwords for:', result.map(r => r.email));
+    
+    res.json({
+      message: 'Demo passwords have been reset successfully!',
+      instructions: 'All demo accounts now use password: admin123',
+      updatedAccounts: result.map(r => r.email),
+      totalUpdated: result.length,
+      accounts: [
+        { email: 'admin@flowerfairies.com', password: 'admin123', role: 'admin' },
+        { email: 'customer1@flowerfairies.com', password: 'admin123', role: 'customer' },
+        { email: 'customer2@flowerfairies.com', password: 'admin123', role: 'customer' },
+        { email: 'driver1@flowerfairies.com', password: 'admin123', role: 'driver' },
+        { email: 'driver2@flowerfairies.com', password: 'admin123', role: 'driver' }
+      ]
+    });
+  } catch (error) {
+    console.error('💥 Error fixing passwords:', error);
     next(error);
   }
 });
