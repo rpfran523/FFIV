@@ -69,6 +69,20 @@ const AdminDashboard: React.FC = () => {
     },
   });
 
+  // Update demo passwords mutation
+  const updateDemoPasswordsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.post('/admin/update-demo-passwords');
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(`Demo passwords updated to ${data.newPassword}`);
+    },
+    onError: () => {
+      toast.error('Failed to update demo passwords');
+    },
+  });
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await refetch();
@@ -79,6 +93,12 @@ const AdminDashboard: React.FC = () => {
   const handleClearCache = () => {
     if (confirm('Are you sure you want to clear all cache?')) {
       clearCacheMutation.mutate();
+    }
+  };
+
+  const handleUpdateDemoPasswords = () => {
+    if (confirm('Are you sure you want to reset all demo account passwords to FullMoon1!!!?')) {
+      updateDemoPasswordsMutation.mutate();
     }
   };
 
@@ -140,6 +160,13 @@ const AdminDashboard: React.FC = () => {
               className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 disabled:opacity-50"
             >
               Clear Cache
+            </button>
+            <button
+              onClick={handleUpdateDemoPasswords}
+              disabled={updateDemoPasswordsMutation.isPending}
+              className="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 disabled:opacity-50"
+            >
+              {updateDemoPasswordsMutation.isPending ? 'Updating...' : 'Reset Demo Passwords'}
             </button>
           </div>
         </div>
