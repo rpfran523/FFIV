@@ -107,13 +107,15 @@ docker run -p 8080:8080 --env-file .env flower-fairies
 
 ## Demo Accounts
 
-The seed data includes these demo accounts:
+The seed data includes these demo accounts (all use the same password):
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | admin@flowerfairies.com | admin123 |
-| Driver | driver1@flowerfairies.com | driver123 |
-| Customer | customer1@flowerfairies.com | customer123 |
+| Admin | admin@flowerfairies.com | FullMoon1!!! |
+| Driver | driver1@flowerfairies.com | FullMoon1!!! |
+| Driver | driver2@flowerfairies.com | FullMoon1!!! |
+| Customer | customer1@flowerfairies.com | FullMoon1!!! |
+| Customer | customer2@flowerfairies.com | FullMoon1!!! |
 
 ## API Routes
 
